@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from io import FileIO
-from pathlib import Path
+from os import PathLike
 from typing import Iterable, List, Union
 
 import numpy as np
@@ -12,7 +12,7 @@ from .common import coerce_matrix, open_file
 
 
 def read_mdf(
-    file: Union[str, FileIO, Path],
+    file: Union[str, FileIO, PathLike],
     *,
     raw: bool = False,
     tall: bool = False,
@@ -21,7 +21,7 @@ def read_mdf(
     There is no official extension for this type of file; '.mdf' is recommended. '.emxd' is also sometimes encountered.
 
     Args:
-        file (str | FileIO | Path): The file to read.
+        file (str | FileIO | PathLike): The file to read.
         raw (bool, optional): Defaults to ``False``. If ``True``, returns an unlabelled ndarray. Otherwise, a DataFrame
             will be returned.
         tall (bool, optional): Defaults to ``False``. If ``True``, a 1D data structure will be returned. If
@@ -70,7 +70,7 @@ def read_mdf(
 
 def to_mdf(
     matrix: Union[pd.DataFrame, pd.Series],
-    file: Union[str, FileIO, Path],
+    file: Union[str, FileIO, PathLike],
 ) -> None:
     """Writes a matrix to Emme's official "binary serialization" format, which can be loaded in Emme using
     ``inro.emme.matrix.MatrixData.load()``. There is no official extension for this type of file; '.mdf' is recommended.
@@ -78,7 +78,7 @@ def to_mdf(
     Args:
         matrix (pandas.DataFrame | panda.Series): The matrix to write to disk. If a Series is given, it MUST have
             a MultiIndex with exactly 2 levels to unstack.
-        file (str | FileIO | Path): The path or file handler to write to.
+        file (str | FileIO | PathLike): The path or file handler to write to.
     """
     if isinstance(matrix, pd.Series):
         row_index = matrix.index.get_level_values(0).unique()
@@ -102,14 +102,14 @@ def to_mdf(
 
 
 def peek_mdf(
-    file: Union[str, FileIO, Path],
+    file: Union[str, FileIO, PathLike],
     *,
     as_index: bool = True,
 ) -> Union[List[List[int]], List[pd.Index]]:
     """Partially opens an MDF file to get the zone system of its rows and its columns.
 
     Args:
-        file (str | FileIO | Path): The file to read.
+        file (str | FileIO | PathLike): The file to read.
         as_index (bool, optional): Defaults to ``True``. Set to ``True`` to return a pandas.Index object rather than
             List[int]
 
@@ -139,7 +139,7 @@ def peek_mdf(
 
 
 def read_emx(
-    file: Union[str, FileIO, Path],
+    file: Union[str, FileIO, PathLike],
     *,
     zones: Union[int, Iterable[int], pd.Index] = None,
     tall: bool = False,
@@ -149,7 +149,7 @@ def read_emx(
     (``Emmebank.dimensions['centroids']``), regardless of the number of zones actually used in all scenarios.
 
     Args:
-        file (str | File | Path): The file to read.
+        file (str | File | PathLike): The file to read.
         zones (int | Iterable[int] | pandas.Index, optional): Defaults to ``None``. An Index or Iterable will be
             interpreted as the zone labels for the matrix rows and columns; returning a DataFrame or Series (depending
             on ``tall``). If an integer is provided, the returned ndarray will be truncated to this 'number of zones'.
@@ -213,7 +213,7 @@ def read_emx(
 
 def to_emx(
     matrix: Union[pd.DataFrame, pd.Series, NDArray],
-    file: Union[str, FileIO, Path],
+    file: Union[str, FileIO, PathLike],
     emmebank_zones: int,
 ) -> None:
     """Writes an "internal" Emme matrix (found in `<Emme Project>/Database/emmemat`); with an '.emx' extension. The
@@ -222,7 +222,7 @@ def to_emx(
     Args:
         matrix (pandas.DataFrame | pandas.Series | numpy.ndarray): The matrix to write to disk. If a Series is
             given, it MUST have a MultiIndex with exactly 2 levels to unstack.
-        file (str | FileIO | Path): The path or file handler to write to.
+        file (str | FileIO | PathLike): The path or file handler to write to.
         emmebank_zones (int): The number of zones the target Emmebank is dimensioned for.
     """
     if emmebank_zones <= 0:
