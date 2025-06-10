@@ -451,11 +451,11 @@ def _prep_square_index(index, aggregator):
         return np.array(aggregator)
 
 
-def _aggregate_frame(matrix, row_aggregator, col_aggregator, aggfunc):
+def _aggregate_frame(matrix: pd.DataFrame, row_aggregator, col_aggregator, aggfunc):
     return matrix.groupby(row_aggregator, axis=0).aggregate(aggfunc).groupby(col_aggregator, axis=1).aggregate(aggfunc)
 
 
-def _aggregate_series(matrix, row_aggregator, col_aggregator, aggfunc):
+def _aggregate_series(matrix: pd.Series, row_aggregator, col_aggregator, aggfunc):
     return matrix.groupby([row_aggregator, col_aggregator]).aggregate(aggfunc)
 
 
