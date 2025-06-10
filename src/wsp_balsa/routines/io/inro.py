@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from io import FileIO
+from json import loads
 from os import PathLike
 from typing import Iterable, List, Union
 
@@ -8,7 +9,21 @@ import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 
+try:
+    import h5py
+except ImportError:
+    h5py = None
+
+try:
+    from cityphi.feature import Feature
+    from inro.emme.agent import Table
+except ImportError:
+    Feature = None
+    Table = None
+
 from .common import coerce_matrix, open_file
+
+# region EMME Matrices
 
 
 def read_mdf(
@@ -238,3 +253,64 @@ def to_emx(
             out[:n, :n] = data
 
         out.tofile(writer)
+
+
+# endregion
+
+# region Features
+
+
+if (h5py is None) or (Feature is None) or (Table is None):
+    # If neither h5py or OpenPaths Python API is available, gracefully disable the function
+
+    def read_feat(*args, **kwargs):
+        raise NotImplementedError()
+
+elif (Feature is None) or (Table is None):
+    # If OpenPaths Python API is not available, use h5py to read a basic version of the feature file
+
+    def read_feat(file: Union[str, PathLike]) -> pd.DataFrame:
+        """Reads tabular data stored in a feature file produced by OpenPaths applications.
+
+        Args:
+            file (str | PathLike): The file to read
+
+        Returns:
+            pd.DataFrame
+        """
+        retval = []
+        with h5py.File(str(file), "r") as f:
+            atts = loads(f["attributes"]["data"][()].decode())
+            for i, att in enumerate(atts):
+                col_name = f"col_{i}"
+                if att["dtype"] == "string":
+                    v = loads(f["attributes"][col_name][()].decode())
+                elif att["is_list"]:
+                    continue  # TODO
+                else:
+                    v = f["attributes"][col_name][()]
+                s = pd.Series(v, name=att["name"])
+                retval.append(s)
+
+        retval = pd.concat(retval, axis=1)
+        if "feature_id" in retval:
+            retval.drop("feature_id", axis=1, inplace=True)
+
+        return retval
+
+else:
+    # If OpenPaths Python API is available, use it to read a full-featured version of the feature file
+
+    def read_feat(file: Union[str, PathLike]) -> pd.DataFrame:
+        """Reads tabular data stored in a feature file produced by OpenPaths applications.
+
+        Args:
+            file (str | PathLike): The file to read
+
+        Returns:
+            pd.DataFrame
+        """
+        return Table(Feature.from_feature_file(str(file))).to_dataframe()
+
+
+# endregion
