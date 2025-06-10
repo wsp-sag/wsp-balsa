@@ -260,17 +260,17 @@ def to_emx(
 # region Features
 
 
-if (h5py is None) or (Feature is None) or (Table is None):
+if (h5py is None) and (Feature is None) and (Table is None):
     # If neither h5py or OpenPaths Python API is available, gracefully disable the function
 
     def read_feat(*args, **kwargs):
         raise NotImplementedError()
 
-elif (Feature is None) or (Table is None):
+elif (Feature is None) and (Table is None):
     # If OpenPaths Python API is not available, use h5py to read a basic version of the feature file
 
     def read_feat(file: Union[str, PathLike]) -> pd.DataFrame:
-        """Reads tabular data stored in a feature file produced by OpenPaths applications.
+        """Reads tabular data stored in a feature file produced by OpenPaths applications. Uses h5py.
 
         Args:
             file (str | PathLike): The file to read
@@ -302,7 +302,7 @@ else:
     # If OpenPaths Python API is available, use it to read a full-featured version of the feature file
 
     def read_feat(file: Union[str, PathLike]) -> pd.DataFrame:
-        """Reads tabular data stored in a feature file produced by OpenPaths applications.
+        """Reads tabular data stored in a feature file produced by OpenPaths applications. Uses the EMME Python API.
 
         Args:
             file (str | PathLike): The file to read
