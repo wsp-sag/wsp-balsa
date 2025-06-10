@@ -8,8 +8,17 @@ import pandas as pd
 from numpy.typing import ArrayLike, NDArray
 
 
-def tlfd(values: ArrayLike, *, bin_start: int = 0, bin_end: int = 200, bin_step: int = 2, weights: ArrayLike = None,
-         intrazonal: ArrayLike = None, label_type: str = 'MULTI', include_top: bool = False) -> pd.Series:
+def tlfd(
+    values: ArrayLike,
+    *,
+    bin_start: int = 0,
+    bin_end: int = 200,
+    bin_step: int = 2,
+    weights: ArrayLike = None,
+    intrazonal: ArrayLike = None,
+    label_type: str = "MULTI",
+    include_top: bool = False,
+) -> pd.Series:
     """Generates a Trip Length Frequency Distribution (i.e. a histogram) from given data. Produces a "pretty" Pandas
     object suitable for charting.
 
@@ -66,7 +75,7 @@ def tlfd(values: ArrayLike, *, bin_start: int = 0, bin_end: int = 200, bin_step:
 
     if intrazonal is not None:
         new_hist[0] = iz_total
-        bins.insert(0, 'intrazonal')
+        bins.insert(0, "intrazonal")
         lower_index += 1
     if include_top:
         if weights is not None:
@@ -77,19 +86,19 @@ def tlfd(values: ArrayLike, *, bin_start: int = 0, bin_end: int = 200, bin_step:
         new_hist[-1] = top
         bins.append(np.inf)
         upper_index -= 1
-    new_hist[lower_index: upper_index] = hist
+    new_hist[lower_index:upper_index] = hist
 
     label_type = label_type.upper()
-    if label_type == 'MULTI':
-        index = pd.MultiIndex.from_arrays([bins[:-1], bins[1:]], names=['from', 'to'])
-    elif label_type == 'TOP':
+    if label_type == "MULTI":
+        index = pd.MultiIndex.from_arrays([bins[:-1], bins[1:]], names=["from", "to"])
+    elif label_type == "TOP":
         index = pd.Index(bins[1:])
-    elif label_type == 'BOTTOM':
+    elif label_type == "BOTTOM":
         index = pd.Index(bins[:-1])
-    elif label_type == 'TEXT':
+    elif label_type == "TEXT":
         s0 = pd.Series(bins[:-1]).astype(str)
         s1 = pd.Series(bins[1:]).astype(str)
-        index = pd.Index(s0.str.cat(s1, sep=' to '))
+        index = pd.Index(s0.str.cat(s1, sep=" to "))
     else:
         raise NotImplementedError(label_type)
 
@@ -99,26 +108,28 @@ def tlfd(values: ArrayLike, *, bin_start: int = 0, bin_end: int = 200, bin_step:
 
 
 def _get_distance_equation(method: str) -> str:
-    if method.lower() == 'euclidean':
+    if method.lower() == "euclidean":
         expr = "sqrt((x0 - x1)**2 + (y0 - y1) ** 2) * coord_unit"
-    elif method.lower() == 'manhattan':
+    elif method.lower() == "manhattan":
         expr = "(abs(x0 - x1) + abs(y0 - y1)) * coord_unit"
-    elif method.lower() == 'haversine':
+    elif method.lower() == "haversine":
         y0 = "(y0 * pi / 180)"
         y1 = "(y1 * pi / 180)"
         delta_lon = "((x1 - x0) * pi / 180)"
         delta_lat = "((y1 - y0) * pi / 180)"
-        part1 = "sin({delta_lat} / 2.0)**2 + cos({y0}) * cos({y1}) * (sin({delta_lon} / 2.0))**2"\
-            .format(delta_lat=delta_lat, delta_lon=delta_lon, y0=y0, y1=y1)
-        expr = "6371.0 * earth_radius_factor* 2.0 * arctan2(sqrt({part1}), sqrt(1.0 - {part1})) * coord_unit".\
-            format(part1=part1)
+        part1 = "sin({delta_lat} / 2.0)**2 + cos({y0}) * cos({y1}) * (sin({delta_lon} / 2.0))**2".format(
+            delta_lat=delta_lat, delta_lon=delta_lon, y0=y0, y1=y1
+        )
+        expr = "6371.0 * earth_radius_factor* 2.0 * arctan2(sqrt({part1}), sqrt(1.0 - {part1})) * coord_unit".format(
+            part1=part1
+        )
     else:
         raise NotImplementedError(method.lower())
     return expr
 
 
 def _prepare_distance_kwargs(kwargs: Dict[str, Any]):
-    defaults = {'coord_unit': 1.0, 'earth_radius_factor': 1.0, 'pi': np.pi}
+    defaults = {"coord_unit": 1.0, "earth_radius_factor": 1.0, "pi": np.pi}
     for key, val in defaults.items():
         if key not in kwargs:
             kwargs[key] = val
@@ -149,9 +160,18 @@ def _check_vectors(description: str, *vectors):
     return common_index, retval
 
 
-def distance_matrix(x0: ArrayLike, y0: ArrayLike, *, labels0: ArrayLike = None, tall: bool = False,
-                    x1: ArrayLike = None, y1: ArrayLike = None, labels1: ArrayLike = None, method: str = 'EUCLIDEAN',
-                    **kwargs) -> Union[pd.Series, pd.DataFrame, NDArray]:
+def distance_matrix(
+    x0: ArrayLike,
+    y0: ArrayLike,
+    *,
+    labels0: ArrayLike = None,
+    tall: bool = False,
+    x1: ArrayLike = None,
+    y1: ArrayLike = None,
+    labels1: ArrayLike = None,
+    method: str = "EUCLIDEAN",
+    **kwargs,
+) -> Union[pd.Series, pd.DataFrame, NDArray]:
     """Fastest method of computing a distance matrix from vectors of coordinates, using the NumExpr package. Supports
     several equations for computing distances.
 
@@ -228,10 +248,10 @@ def distance_matrix(x0: ArrayLike, y0: ArrayLike, *, labels0: ArrayLike = None, 
     expr = _get_distance_equation(method)
     kwargs = kwargs.copy()
     _prepare_distance_kwargs(kwargs)
-    kwargs['x0'] = x_array0
-    kwargs['x1'] = x_array1
-    kwargs['y0'] = y_array0
-    kwargs['y1'] = y_array1
+    kwargs["x0"] = x_array0
+    kwargs["x1"] = x_array1
+    kwargs["y0"] = y_array0
+    kwargs["y1"] = y_array1
 
     raw_matrix = ne.evaluate(expr, local_dict=kwargs)
     labelled_result = labels0 is not None and labels1 is not None
@@ -249,8 +269,15 @@ def distance_matrix(x0: ArrayLike, y0: ArrayLike, *, labels0: ArrayLike = None, 
     return pd.DataFrame(raw_matrix, index=labels0, columns=labels1)
 
 
-def distance_array(x0: ArrayLike, y0: ArrayLike, x1: ArrayLike, y1: ArrayLike, *, method: str = 'euclidean',
-                   **kwargs) -> Union[NDArray, pd.Series]:
+def distance_array(
+    x0: ArrayLike,
+    y0: ArrayLike,
+    x1: ArrayLike,
+    y1: ArrayLike,
+    *,
+    method: str = "euclidean",
+    **kwargs,
+) -> Union[NDArray, pd.Series]:
     """
     Fast method to compute distance between 2 (x, y) points, represented by 4 separate arrays, using the NumExpr
     package. Supports several equations for computing distances
@@ -286,10 +313,10 @@ def distance_array(x0: ArrayLike, y0: ArrayLike, x1: ArrayLike, y1: ArrayLike, *
     expr = _get_distance_equation(method)
     kwargs = kwargs.copy()
     _prepare_distance_kwargs(kwargs)
-    kwargs['x0'] = x0
-    kwargs['x1'] = x1
-    kwargs['y0'] = y0
-    kwargs['y1'] = y1
+    kwargs["x0"] = x0
+    kwargs["x1"] = x1
+    kwargs["y0"] = y0
+    kwargs["y1"] = y1
 
     result_array = ne.evaluate(expr, local_dict=kwargs)
 
@@ -299,8 +326,12 @@ def distance_array(x0: ArrayLike, y0: ArrayLike, x1: ArrayLike, y1: ArrayLike, *
     return result_array
 
 
-def indexers_for_map_matrix(row_labels: pd.Index, col_labels: pd.Index, superset: pd.Index,
-                            check: bool = True) -> Tuple[np.ndarray, np.ndarray]:
+def indexers_for_map_matrix(
+    row_labels: pd.Index,
+    col_labels: pd.Index,
+    superset: pd.Index,
+    check: bool = True,
+) -> Tuple[np.ndarray, np.ndarray]:
     if check:
         assert np.all(row_labels.isin(superset))
         assert np.all(col_labels.isin(superset))
@@ -311,10 +342,16 @@ def indexers_for_map_matrix(row_labels: pd.Index, col_labels: pd.Index, superset
     return row_offsets, col_offsets
 
 
-def map_to_matrix(values: pd.Series, super_labels: pd.Index, fill_value: float = 0,
-                  row_col_labels: Tuple[pd.Series, pd.Series] = None,
-                  row_col_offsets: Tuple[NDArray, NDArray] = None, out: Union[pd.DataFrame, NDArray] = None,
-                  grouper_func: str = 'sum', out_operand: str = '+') -> pd.DataFrame:
+def map_to_matrix(
+    values: pd.Series,
+    super_labels: pd.Index,
+    fill_value: float = 0,
+    row_col_labels: Tuple[pd.Series, pd.Series] = None,
+    row_col_offsets: Tuple[NDArray, NDArray] = None,
+    out: Union[pd.DataFrame, NDArray] = None,
+    grouper_func: str = "sum",
+    out_operand: str = "+",
+) -> pd.DataFrame:
 
     # TODO: Check that `values` dtype is numeric, or at least, add-able
 
@@ -357,8 +394,8 @@ def map_to_matrix(values: pd.Series, super_labels: pd.Index, fill_value: float =
     if out_is_new:
         out[xs, ys] = aggregated.values
     else:
-        out_name = '__OUT__'
-        other_name = '__OTHER__'
+        out_name = "__OUT__"
+        other_name = "__OTHER__"
         ld = {out_name: out[xs, ys], other_name: aggregated.values}
         ne.evaluate("{0} = {0} {1} {2}".format(out_name, out_operand, other_name), local_dict=ld)
 

@@ -10,24 +10,30 @@ import pandas as pd
 from numpy.typing import NDArray
 
 
-def coerce_matrix(matrix: Union[NDArray, pd.DataFrame, pd.Series], *, allow_raw: bool = True,
-                  force_square: bool = True) -> NDArray:
+def coerce_matrix(
+    matrix: Union[NDArray, pd.DataFrame, pd.Series],
+    *,
+    allow_raw: bool = True,
+    force_square: bool = True,
+) -> NDArray:
     """Infers a NumPy array from given input
 
     Args:
-        matrix (NDArray | pandas.DataFrame | pandas.Series):
+        matrix (NDArray | pandas.DataFrame | pandas.Series): Matrix data to coerce its shape into a 2D ndarray
         allow_raw (bool, optional): Defaults to ``True``.
-        force_square (bool, optional): Defaults to ``True``.
+        force_square (bool, optional): Defaults to ``True``. A flag to check if the resulting matrix is square in shape
 
     Returns:
         NDArray: A 2D ndarray of type float32
     """
     if isinstance(matrix, pd.DataFrame):
         if force_square:
-            assert matrix.index.equals(matrix.columns)
+            if not matrix.index.equals(matrix.columns):
+                raise ValueError("Rows and columns in `matrix` are not identical")
         return matrix.values.astype(np.float32)
     elif isinstance(matrix, pd.Series):
-        assert matrix.index.nlevels == 2, "Cannot infer a matrix from a Series with more or fewer than 2 levels"
+        if matrix.index.nlevels != 2:
+            raise ValueError("Cannot infer a matrix from a Series with more or fewer than 2 levels")
         wide = matrix.unstack()
 
         union = wide.index | wide.columns
@@ -38,14 +44,21 @@ def coerce_matrix(matrix: Union[NDArray, pd.DataFrame, pd.Series], *, allow_raw:
         raise NotImplementedError()
 
     matrix = np.array(matrix, dtype=np.float32)
-    assert len(matrix.shape) == 2
+    if len(matrix.shape) != 2:
+        raise ValueError("`matrix` is not 2-dimensional")
     i, j = matrix.shape
-    assert i == j
+    if i != j:
+        raise ValueError("`matrix` is not square")
 
     return matrix
 
 
-def expand_array(a: NDArray, n: NDArray, *, axis: int = None) -> NDArray:
+def expand_array(
+    a: NDArray,
+    n: NDArray,
+    *,
+    axis: int = None,
+) -> NDArray:
     """Expands an array across all dimensions by a set amount
 
     Args:
