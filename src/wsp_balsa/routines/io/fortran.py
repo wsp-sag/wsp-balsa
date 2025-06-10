@@ -13,15 +13,21 @@ from .common import coerce_matrix, expand_array, open_file
 
 def _infer_fortran_zones(n_words):
     """Returns the inverse of n_words = matrix_size * (matrix_size + 1)"""
-    n = int(0.5 + ((1 + 4 * n_words)**0.5)/2) - 1
-    assert n_words == (n * (n + 1)), "Could not infer a square matrix from file"
+    n = int(0.5 + ((1 + 4 * n_words) ** 0.5) / 2) - 1
+    if n_words != (n * (n + 1)):
+        raise RuntimeError("Could not infer a square matrix from file")
     return n
 
 
-def read_fortran_rectangle(file: Union[str, FileIO, Path], n_columns: int, *,
-                           zones: Union[int, Iterable[int], pd.Index] = None, tall: bool = False,
-                           reindex_rows: bool = False, fill_value: Union[int, float] = None
-                           ) -> Union[NDArray, pd.DataFrame, pd.Series]:
+def read_fortran_rectangle(
+    file: Union[str, FileIO, Path],
+    n_columns: int,
+    *,
+    zones: Union[int, Iterable[int], pd.Index] = None,
+    tall: bool = False,
+    reindex_rows: bool = False,
+    fill_value: Union[int, float] = None,
+) -> Union[NDArray, pd.DataFrame, pd.Series]:
     """Reads a FORTRAN-friendly .bin file (a.k.a. 'simple binary format') which is known to NOT be square. Also works
     with square matrices.
 
@@ -44,14 +50,15 @@ def read_fortran_rectangle(file: Union[str, FileIO, Path], n_columns: int, *,
         NDArray, pandas.DataFrame or pandas.Series
 
     Raises:
-        AssertionError: if the shape is not valid.
+        ValueError: if the shape is not valid.
     """
-    with open_file(file, mode='rb') as reader:
+    with open_file(file, mode="rb") as reader:
         n_columns = int(n_columns)
 
         matrix = np.fromfile(reader, dtype=np.float32)
         rows = len(matrix) // (n_columns + 1)
-        assert len(matrix) == (rows * (n_columns + 1))
+        if len(matrix) != (rows * (n_columns + 1)):
+            raise ValueError("Matrix shape is not valid")
 
         matrix.shape = rows, n_columns + 1
 
@@ -66,27 +73,31 @@ def read_fortran_rectangle(file: Union[str, FileIO, Path], n_columns: int, *,
             return matrix
 
         if isinstance(zones, (int, np.int_)):
-            matrix = matrix[: zones, :zones]
+            matrix = matrix[:zones, :zones]
 
             if tall:
                 matrix.shape = zones * zones
             return matrix
 
         nzones = len(zones)
-        matrix = matrix[: nzones, : nzones]
+        matrix = matrix[:nzones, :nzones]
         row_labels = zones.take(row_index[:nzones])
         matrix = pd.DataFrame(matrix, index=row_labels, columns=zones)
 
         if reindex_rows:
-            matrix = matrix.reindex_axis(zones, axis=0, fill_value=fill_value)
+            matrix = matrix.reindex(zones, axis=0, fill_value=fill_value)
 
         if tall:
             return matrix.stack()
         return matrix
 
 
-def read_fortran_square(file: Union[str, FileIO, Path], *, zones: Union[int, Iterable[int], pd.Index] = None,
-                        tall: bool = False) -> Union[NDArray, pd.DataFrame, pd.Series]:
+def read_fortran_square(
+    file: Union[str, FileIO, Path],
+    *,
+    zones: Union[int, Iterable[int], pd.Index] = None,
+    tall: bool = False,
+) -> Union[NDArray, pd.DataFrame, pd.Series]:
     """Reads a FORTRAN-friendly .bin file (a.k.a. 'simple binary format') which is known to be square.
 
     This file format is an array of 4-bytes, where each row is prefaced by an integer referring to the 1-based
@@ -105,7 +116,7 @@ def read_fortran_square(file: Union[str, FileIO, Path], *, zones: Union[int, Ite
     Returns:
         NDArray, pandas.DataFrame, or pandas.Series
     """
-    with open_file(file, mode='rb') as reader:
+    with open_file(file, mode="rb") as reader:
         floats = np.fromfile(reader, dtype=np.float32)
         n_words = len(floats)
         matrix_size = _infer_fortran_zones(n_words)
@@ -139,8 +150,14 @@ def read_fortran_square(file: Union[str, FileIO, Path], *, zones: Union[int, Ite
         return matrix.stack() if tall else matrix
 
 
-def to_fortran(matrix: Union[NDArray, pd.DataFrame, pd.Series], file: Union[str, FileIO, Path], *,
-               n_columns: int = None, min_index: int = 1, force_square: bool = True):
+def to_fortran(
+    matrix: Union[NDArray, pd.DataFrame, pd.Series],
+    file: Union[str, FileIO, Path],
+    *,
+    n_columns: int = None,
+    min_index: int = 1,
+    force_square: bool = True,
+) -> None:
     """Writes a FORTRAN-friendly .bin file (a.k.a. 'simple binary format'), in a square format.
 
     Args:
@@ -153,14 +170,15 @@ def to_fortran(matrix: Union[NDArray, pd.DataFrame, pd.Series], file: Union[str,
         min_index (int, optional): Defaults to ``1``. The lowest numbered row. Used when slicing matrices
         force_square (bool, optional): Defaults to ``True``.
     """
-    assert min_index >= 1
+    if min_index < 1:
+        raise ValueError("`min_index` must be >= 1")
     array = coerce_matrix(matrix, force_square=force_square)
 
     if n_columns is not None and n_columns > array.shape[1]:
         extra_columns = n_columns - array.shape[1]
         array = expand_array(array, extra_columns, axis=1)
 
-    with open_file(file, mode='wb') as writer:
+    with open_file(file, mode="wb") as writer:
         rows, columns = array.shape
         temp = np.zeros([rows, columns + 1], dtype=np.float32)
         temp[:, 1:] = array

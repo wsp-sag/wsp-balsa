@@ -11,6 +11,7 @@ from typing import Any, Dict, Generator, Union
 
 try:
     from inro.modeller import logbook_write
+
     EMME_ENV = True
 except ImportError:
     logbook_write = None
@@ -36,10 +37,12 @@ class LogFormats(Enum):
     BASIC = _BASIC_FORMAT
     JSON = _JSON_FORMAT
 
+
 # endregion
 
 
 # region Filter Classes
+
 
 class _RangeFilter(object):
 
@@ -50,10 +53,12 @@ class _RangeFilter(object):
     def filter(self, record: LogRecord) -> int:
         return int(self._low <= record.levelno <= self._high)
 
+
 # endregion
 
 
 # region Formatter Classes
+
 
 class _SwitchFormatter(Formatter):
 
@@ -76,10 +81,11 @@ class _SwitchFormatter(Formatter):
 class _JsonFormatter(Formatter):
 
     def format(self, record: LogRecord) -> str:
-        keys = ['levelname', 'name', 'msg', 'created', 'levelno']
+        keys = ["levelname", "name", "msg", "created", "levelno"]
         to_json = {key: getattr(record, key) for key in keys}
-        to_json['asctime'] = self.formatTime(record)
+        to_json["asctime"] = self.formatTime(record)
         return json_to_str(to_json)
+
 
 # endregion
 
@@ -119,9 +125,10 @@ class ModelLogger(Logger):
         self.warning(msg)
 
     if EMME_ENV:
+
         def flush_load_failures(self):
             body = "\n".join(self._all_load_failures)
-            logbook_write(name='List of all errors in model configuration', value=body)
+            logbook_write(name="List of all errors in model configuration", value=body)
 
         def __del__(self):
             self.flush_load_failures()
@@ -129,7 +136,7 @@ class ModelLogger(Logger):
 
 def _prep_fancy_formatter():
     raw_fmt = _FMT_STRING.format(arrow=_UNC_ARROW)
-    fmt_string = str(''.join(["\x1b[{colour}m", raw_fmt, "\x1b[0m"]))
+    fmt_string = str("".join(["\x1b[{colour}m", raw_fmt, "\x1b[0m"]))
 
     debug_formatter = logging.Formatter(fmt_string.format(colour=37))  # Grey colour
     subproc_formatter = logging.Formatter(fmt_string.format(colour=37))  # Grey colour
@@ -141,39 +148,53 @@ def _prep_fancy_formatter():
     subproc_err_formatter = logging.Formatter(fmt_string.format(colour=41))  # Red BG colour
     critical_formatter = logging.Formatter(fmt_string.format(colour="1m\x1b[41"))  # Bold on red BG
 
-    switch_formatter = _SwitchFormatter(raw_fmt, {
-        logging.INFO: info_formatter, logging.WARNING: warn_formatter, _TIP_LEVEL: tip_formatter,
-        _REPORT_LEVEL: report_formatter, logging.DEBUG: debug_formatter, logging.ERROR: error_formatter,
-        logging.CRITICAL: critical_formatter, _SUBPROC_LEVEL: subproc_formatter,
-        _SUBPROC_ERR_LEVEL: subproc_err_formatter
-    })
+    switch_formatter = _SwitchFormatter(
+        raw_fmt,
+        {
+            logging.INFO: info_formatter,
+            logging.WARNING: warn_formatter,
+            _TIP_LEVEL: tip_formatter,
+            _REPORT_LEVEL: report_formatter,
+            logging.DEBUG: debug_formatter,
+            logging.ERROR: error_formatter,
+            logging.CRITICAL: critical_formatter,
+            _SUBPROC_LEVEL: subproc_formatter,
+            _SUBPROC_ERR_LEVEL: subproc_err_formatter,
+        },
+    )
 
     return switch_formatter
 
 
 # region Helper Functions
 
-def init_root(root_name: str, *, stream_format: Union[str, LogFormats] = LogFormats.FANCY,
-              log_debug: bool = True) -> ModelLogger:
-    """Initialize a ModelLogger"""
-    logging.addLevelName(_SUBPROC_ERR_LEVEL, 'SUBPROC_ERR')
-    logging.addLevelName(_TIP_LEVEL, 'TIP')
-    logging.addLevelName(_REPORT_LEVEL, 'REPORT')
-    logging.addLevelName(_SUBPROC_LEVEL, 'SUBPROC')
+
+def init_root(
+    name: str,
+    *,
+    stream_format: Union[str, LogFormats] = LogFormats.FANCY,
+    log_debug: bool = True,
+) -> ModelLogger:
+    """Initialize a ModelLogger
+
+    Args:
+        root_name (str): The logger's name to use
+        stream_format (str | LogFormats, optional): Defaults to ``LogFormats.FANCY``. Logging format options to use.
+            Options include ``BASIC``, ``FANCY``, or ``JSON``
+        log_debug (bool, optional): Defaults to ``True``. A flag to log debug-level messages
+    """
+
+    logging.addLevelName(_SUBPROC_ERR_LEVEL, "SUBPROC_ERR")
+    logging.addLevelName(_TIP_LEVEL, "TIP")
+    logging.addLevelName(_REPORT_LEVEL, "REPORT")
+    logging.addLevelName(_SUBPROC_LEVEL, "SUBPROC")
     logging.setLoggerClass(ModelLogger)
-    root_logger: ModelLogger = logging.getLogger(root_name)  # Will return a ModelLogger based on the previous line
+
+    root_logger: ModelLogger = logging.getLogger(name)  # Will return a ModelLogger based on the previous line
     root_logger.propagate = True
-    if log_debug:
-        root_logger.setLevel(1)
-    else:
-        root_logger.setLevel(_REPORT_LEVEL)
+    root_logger.setLevel(1 if log_debug else _REPORT_LEVEL)
 
-    if isinstance(stream_format, str):
-        try:
-            stream_format = LogFormats[stream_format]
-        except KeyError:
-            pass
-
+    stream_format = LogFormats(stream_format)
     if stream_format == LogFormats.FANCY:
         stdout_formatter = _prep_fancy_formatter()
     elif stream_format == LogFormats.BASIC:
@@ -195,14 +216,19 @@ def init_root(root_name: str, *, stream_format: Union[str, LogFormats] = LogForm
 
 
 def get_model_logger(name: str) -> ModelLogger:
-    """Retrieve a ModelLogger"""
+    """Retrieve a ModelLogger with the specified name"""
     logging.setLoggerClass(ModelLogger)
     return logging.getLogger(name)  # Will return a ModelLogger based on the previous line
 
 
 @contextmanager
-def log_to_file(file_name: Union[str, PathLike], name: str, *, append: bool = False,
-                raw_ascii: bool = False) -> Generator:
+def log_to_file(
+    file_name: Union[str, PathLike],
+    name: str,
+    *,
+    append: bool = False,
+    raw_ascii: bool = False,
+) -> Generator:
     """Context manager for opening and closing a logfile. Cleans up its file handler on exit.
 
     This is especially important during batch runs, because loggers are module-based (e.g. global). Without the cleanup,
@@ -216,8 +242,8 @@ def log_to_file(file_name: Union[str, PathLike], name: str, *, append: bool = Fa
     """
     root = logging.getLogger(name)
 
-    write_mode = 'a' if append else 'w'
-    handler = FileHandler(file_name, mode=write_mode, encoding='utf-8')
+    write_mode = "a" if append else "w"
+    handler = FileHandler(file_name, mode=write_mode, encoding="utf-8")
 
     arrow = _ASCII_ARROW if raw_ascii else _UNC_ARROW
     fmt_str = _FMT_STRING.format(arrow=arrow)
@@ -229,11 +255,12 @@ def log_to_file(file_name: Union[str, PathLike], name: str, *, append: bool = Fa
     try:
         yield
     except:
-        with open(file_name, mode='a') as writer:
+        with open(file_name, mode="a") as writer:
             writer.write(str("\n" + "-" * 100 + "\n\n"))
             writer.write(tb.format_exc())
         raise
     finally:
         root.removeHandler(handler)
+
 
 # endregion

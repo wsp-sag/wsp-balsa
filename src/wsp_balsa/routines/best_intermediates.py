@@ -7,17 +7,18 @@ from typing import Dict, List, Tuple, Union
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
-from pandas.api.types import is_categorical_dtype
 
 try:
     from numba import njit
 except ImportError:
+
     def njit(*args, **kwargs):
 
         def decorator(func):
             return func
 
         return decorator
+
 
 _NULL_INDEX = -1
 _NEG_INF = -np.inf
@@ -57,8 +58,17 @@ def _update_heap(utilities: NDArray, zones: NDArray, new_u: float, new_zone: int
 
 
 @njit(nogil=True, cache=True)
-def _nbf_twopart_worker(pk_costs: NDArray, kq_costs: NDArray, add_pkq_costs: NDArray, result_costs: NDArray,
-                        result_indices: NDArray, flag_array: NDArray, start: int, stop: int, n: int):
+def _nbf_twopart_worker(
+    pk_costs: NDArray,
+    kq_costs: NDArray,
+    add_pkq_costs: NDArray,
+    result_costs: NDArray,
+    result_indices: NDArray,
+    flag_array: NDArray,
+    start: int,
+    stop: int,
+    n: int,
+):
     """Performance-tuned Numba function to operate on its own thread"""
     n_origins, n_intermediate = pk_costs.shape
     n_destinations = kq_costs.shape[1]
@@ -96,9 +106,19 @@ def _nbf_twopart_worker(pk_costs: NDArray, kq_costs: NDArray, add_pkq_costs: NDA
 
 
 @njit(nogil=True, cache=True)
-def _nbf_twopart_subset_worker(pk_costs: NDArray, kq_costs: NDArray, add_pkq_costs: NDArray, subset_pk_costs: NDArray,
-                               result_costs: NDArray, result_indices: NDArray, flag_array: NDArray, start: int,
-                               stop: int, n_subset: int, n_final: int):
+def _nbf_twopart_subset_worker(
+    pk_costs: NDArray,
+    kq_costs: NDArray,
+    add_pkq_costs: NDArray,
+    subset_pk_costs: NDArray,
+    result_costs: NDArray,
+    result_indices: NDArray,
+    flag_array: NDArray,
+    start: int,
+    stop: int,
+    n_subset: int,
+    n_final: int,
+):
     """Performance-tuned Numba function to operate on its own thread"""
     n_origins, n_intermediate = pk_costs.shape
     n_destinations = kq_costs.shape[1]
@@ -176,11 +196,22 @@ def _validate_pk_kq_tables(pk_table: pd.DataFrame, kq_table: pd.DataFrame) -> Tu
     return origin_zones, intermediate_zones, destination_zones
 
 
-def best_intermediate_zones(pk_table: pd.DataFrame, kq_table: pd.DataFrame, cost_col: str, *,
-                            n: int = 1, add_pkq_cost: NDArray = None, flag_array: NDArray = None,
-                            maximize: bool = True, null_index: int = 0, other_columns: bool = True,
-                            intermediate_name: str = "intermediate_zone", availability_name: str = "available",
-                            n_threads: int = 1, squeeze: bool = True) -> Union[pd.DataFrame, Dict[int, pd.DataFrame]]:
+def best_intermediate_zones(
+    pk_table: pd.DataFrame,
+    kq_table: pd.DataFrame,
+    cost_col: str,
+    *,
+    n: int = 1,
+    add_pkq_cost: NDArray = None,
+    flag_array: NDArray = None,
+    maximize: bool = True,
+    null_index: int = 0,
+    other_columns: bool = True,
+    intermediate_name: str = "intermediate_zone",
+    availability_name: str = "available",
+    n_threads: int = 1,
+    squeeze: bool = True,
+) -> Union[pd.DataFrame, Dict[int, pd.DataFrame]]:
     """Numba-accelerated.
 
     Triple-index operation for two matrices, finding the most- or least-cost intermediate zones. Takes a first leg
@@ -257,24 +288,26 @@ def best_intermediate_zones(pk_table: pd.DataFrame, kq_table: pd.DataFrame, cost
 
     if add_pkq_cost is not None:
         if add_pkq_cost.shape != (n_origins, n_intermediate, n_destinations):
-            raise RuntimeError('Shape of `add_pkq_cost` does not match the number of origin, intermediate, and '
-                               'destination zones found in `pk_table` and `kq_table`')
+            raise RuntimeError(
+                "Shape of `add_pkq_cost` does not match the number of origin, intermediate, and "
+                "destination zones found in `pk_table` and `kq_table`"
+            )
         add_pkq_cost = add_pkq_cost.astype(np.float64)
 
     if flag_array is None:
         flag_array = np.full(n_origins * n_destinations, fill_value=True)
     else:
         if not len(flag_array) == (n_origins * n_destinations):
-            raise RuntimeError('Length of `flag_array` incompatible with size of `pk_table` and `kq_table`')
+            raise RuntimeError("Length of `flag_array` incompatible with size of `pk_table` and `kq_table`")
         flag_array = flag_array.astype(np.bool_)
 
     # Run the accelerated function
     breaks = _get_breaks(n_origins * n_destinations, n_threads)
-    threads = np.empty(n_threads, dtype='O')
+    threads = np.empty(n_threads, dtype="O")
     for i, (start, stop) in enumerate(breaks):
         t = Thread(
             target=_nbf_twopart_worker,
-            args=[pk_cost, kq_cost, add_pkq_cost, result_cost, result_indices, flag_array, start, stop, n]
+            args=[pk_cost, kq_cost, add_pkq_cost, result_cost, result_indices, flag_array, start, stop, n],
         )
         t.start()
         threads[i] = t
@@ -282,18 +315,42 @@ def best_intermediate_zones(pk_table: pd.DataFrame, kq_table: pd.DataFrame, cost
         t.join()
 
     return _combine_tables(
-        pk_table, kq_table, result_cost, result_indices, flag_array, origin_zones, intermediate_zones,
-        destination_zones, cost_col, availability_name, intermediate_name, other_columns=other_columns,
-        squeeze=squeeze, null_index=null_index
+        pk_table,
+        kq_table,
+        result_cost,
+        result_indices,
+        flag_array,
+        origin_zones,
+        intermediate_zones,
+        destination_zones,
+        cost_col,
+        availability_name,
+        intermediate_name,
+        other_columns=other_columns,
+        squeeze=squeeze,
+        null_index=null_index,
     )
 
 
-def best_intermediate_subset_zones(pk_subset_cost: pd.Series, pk_table: pd.DataFrame, kq_table: pd.DataFrame,
-                                   cost_col: str, *, n_subset: int = 1, n_final: int = 1, add_pkq_cost: NDArray = None,
-                                   flag_array: NDArray = None, maximize_subset: bool = True,
-                                   maximize_final: bool = True, null_index: int = 0, other_columns: bool = True,
-                                   intermediate_name: str = "intermediate_zone", availability_name: str = "available",
-                                   n_threads: int = 1, squeeze: bool = True) -> Union[pd.DataFrame, Dict[int, pd.DataFrame]]:
+def best_intermediate_subset_zones(
+    pk_subset_cost: pd.Series,
+    pk_table: pd.DataFrame,
+    kq_table: pd.DataFrame,
+    cost_col: str,
+    *,
+    n_subset: int = 1,
+    n_final: int = 1,
+    add_pkq_cost: NDArray = None,
+    flag_array: NDArray = None,
+    maximize_subset: bool = True,
+    maximize_final: bool = True,
+    null_index: int = 0,
+    other_columns: bool = True,
+    intermediate_name: str = "intermediate_zone",
+    availability_name: str = "available",
+    n_threads: int = 1,
+    squeeze: bool = True,
+) -> Union[pd.DataFrame, Dict[int, pd.DataFrame]]:
     """Numba-accelerated.
 
     Triple-index operation for two matrices, finding the most- or least-cost intermediate zones from a subset.
@@ -361,12 +418,12 @@ def best_intermediate_subset_zones(pk_subset_cost: pd.Series, pk_table: pd.DataF
     n_subset = max(1, n_subset)
     n_final = max(1, n_final)
     if n_subset < n_final:
-        raise ValueError('`n_subset` must be >= `n_final`')
+        raise ValueError("`n_subset` must be >= `n_final`")
     n_threads = int(np.clip(n_threads, 1, cpu_count()))
 
     origin_zones, intermediate_zones, destination_zones = _validate_pk_kq_tables(pk_table, kq_table)
     if not pk_subset_cost.index.equals(pk_table.index):
-        raise RuntimeError('`pk_subset_cost` and `pk_table` have incompatible indices')
+        raise RuntimeError("`pk_subset_cost` and `pk_table` have incompatible indices")
 
     # Set up the raw data
     n_origins, n_intermediate, n_destinations = len(origin_zones), len(intermediate_zones), len(destination_zones)
@@ -384,25 +441,38 @@ def best_intermediate_subset_zones(pk_subset_cost: pd.Series, pk_table: pd.DataF
 
     if add_pkq_cost is not None:
         if add_pkq_cost.shape != (n_origins, n_intermediate, n_destinations):
-            raise RuntimeError('Shape of `add_pkq_cost` does not match the number of origin, intermediate, and '
-                               'destination zones found in `pk_table` and `kq_table`')
+            raise RuntimeError(
+                "Shape of `add_pkq_cost` does not match the number of origin, intermediate, and "
+                "destination zones found in `pk_table` and `kq_table`"
+            )
         add_pkq_cost = add_pkq_cost.astype(np.float64)
 
     if flag_array is None:
         flag_array = np.full(n_origins * n_destinations, fill_value=True)
     else:
         if not len(flag_array) == (n_origins * n_destinations):
-            raise RuntimeError('Length of `flag_array` incompatible with size of `pk_table` and `kq_table`')
+            raise RuntimeError("Length of `flag_array` incompatible with size of `pk_table` and `kq_table`")
         flag_array = flag_array.astype(np.bool_)
 
     # Run the accelerated function
     breaks = _get_breaks(n_origins * n_destinations, n_threads)
-    threads = np.empty(n_threads, dtype='O')
+    threads = np.empty(n_threads, dtype="O")
     for i, (start, stop) in enumerate(breaks):
         t = Thread(
             target=_nbf_twopart_subset_worker,
-            args=[pk_cost, kq_cost, add_pkq_cost, pk_subset_cost, result_cost, result_indices, flag_array, start,
-                  stop, n_subset, n_final]
+            args=[
+                pk_cost,
+                kq_cost,
+                add_pkq_cost,
+                pk_subset_cost,
+                result_cost,
+                result_indices,
+                flag_array,
+                start,
+                stop,
+                n_subset,
+                n_final,
+            ],
         )
         t.start()
         threads[i] = t
@@ -410,15 +480,27 @@ def best_intermediate_subset_zones(pk_subset_cost: pd.Series, pk_table: pd.DataF
         t.join()
 
     return _combine_tables(
-        pk_table, kq_table, result_cost, result_indices, flag_array, origin_zones, intermediate_zones,
-        destination_zones, cost_col, availability_name, intermediate_name, other_columns=other_columns,
-        squeeze=squeeze, null_index=null_index
+        pk_table,
+        kq_table,
+        result_cost,
+        result_indices,
+        flag_array,
+        origin_zones,
+        intermediate_zones,
+        destination_zones,
+        cost_col,
+        availability_name,
+        intermediate_name,
+        other_columns=other_columns,
+        squeeze=squeeze,
+        null_index=null_index,
     )
 
 
-def _reshape_series(series: pd.Series, n_rows: int, n_cols: int, row_indexer: NDArray,
-                    col_indexer: NDArray) -> Union[NDArray, pd.Categorical]:
-    if is_categorical_dtype(series):
+def _reshape_series(
+    series: pd.Series, n_rows: int, n_cols: int, row_indexer: NDArray, col_indexer: NDArray
+) -> Union[NDArray, pd.Categorical]:
+    if isinstance(series, pd.CategoricalDtype):
         codes = series.cat.codes
         reshaped = codes.to_numpy().reshape([n_rows, n_cols])
         flat = reshaped[row_indexer, col_indexer]
@@ -428,11 +510,23 @@ def _reshape_series(series: pd.Series, n_rows: int, n_cols: int, row_indexer: ND
         return reshaped[row_indexer, col_indexer]
 
 
-def _combine_tables(pk_table: pd.DataFrame, kq_table: pd.DataFrame, result_cost: NDArray, result_indices: NDArray,
-                    flag_array: NDArray, origin_zones: pd.Index, intermediate_zones: pd.Index,
-                    destination_zones: pd.Index, cost_col: str, avail_col: str, intermediate_name: str, *,
-                    other_columns: bool = True, squeeze: bool = True,
-                    null_index: int = 0) -> Union[pd.DataFrame, Dict[int, pd.DataFrame]]:
+def _combine_tables(
+    pk_table: pd.DataFrame,
+    kq_table: pd.DataFrame,
+    result_cost: NDArray,
+    result_indices: NDArray,
+    flag_array: NDArray,
+    origin_zones: pd.Index,
+    intermediate_zones: pd.Index,
+    destination_zones: pd.Index,
+    cost_col: str,
+    avail_col: str,
+    intermediate_name: str,
+    *,
+    other_columns: bool = True,
+    squeeze: bool = True,
+    null_index: int = 0,
+) -> Union[pd.DataFrame, Dict[int, pd.DataFrame]]:
 
     n_origins, n_intermediate, n_destinations = len(origin_zones), len(intermediate_zones), len(destination_zones)
     n_selected: int = result_indices.shape[2]
@@ -478,9 +572,7 @@ def _combine_tables(pk_table: pd.DataFrame, kq_table: pd.DataFrame, result_cost:
 
             pk_component = 0
             if in_pk_table:
-                pk_component = _reshape_series(
-                    pk_table[column], n_origins, n_intermediate, pk_indexer, flat_offsets_i
-                )
+                pk_component = _reshape_series(pk_table[column], n_origins, n_intermediate, pk_indexer, flat_offsets_i)
 
             kq_component = 0
             if in_kq_table:

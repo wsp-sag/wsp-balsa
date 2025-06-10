@@ -10,10 +10,19 @@ from matplotlib.axes import Axes
 from matplotlib.ticker import FuncFormatter
 
 
-def convergence_boxplot(targets: pd.DataFrame, results: pd.DataFrame, filter_func: Callable[[pd.Series], pd.Series], *,
-                        adjust_target: bool = True, percentage: bool = True, band: Tuple[float, float] = None,
-                        simple_labels: bool = True, ax: Axes = None, fp: Union[str, PathLike] = None,
-                        title: str = None) -> Axes:
+def convergence_boxplot(
+    targets: pd.DataFrame,
+    results: pd.DataFrame,
+    filter_func: Callable[[pd.Series], pd.Series],
+    *,
+    adjust_target: bool = True,
+    percentage: bool = True,
+    band: Tuple[float, float] = None,
+    simple_labels: bool = True,
+    ax: Axes = None,
+    fp: Union[str, PathLike] = None,
+    title: str = None,
+) -> Axes:
     """Measures convergence of constrained location-choice models (such as work-location choice). Can be used to
     produce multiple box plots for different sub-sets of zones, usually based on size.
 
@@ -71,7 +80,7 @@ def convergence_boxplot(targets: pd.DataFrame, results: pd.DataFrame, filter_fun
         ]
     unlabelled_zones = pd.DataFrame(unlabelled_zones, columns=columns)
 
-    with np.errstate(invalid='ignore'):
+    with np.errstate(invalid="ignore"):
         ax = unlabelled_zones.plot.box(ax=ax, figsize=[12, 6])
         ax.axhline(0)
 
@@ -88,8 +97,8 @@ def convergence_boxplot(targets: pd.DataFrame, results: pd.DataFrame, filter_fun
 
         if band is not None:
             lower, upper = band
-            ax.axhline(lower, color='black', linewidth=1, alpha=0.5)
-            ax.axhline(upper, color='black', linewidth=1, alpha=0.5)
+            ax.axhline(lower, color="black", linewidth=1, alpha=0.5)
+            ax.axhline(upper, color="black", linewidth=1, alpha=0.5)
 
         if title:
             ax.set_title(title)
@@ -100,8 +109,16 @@ def convergence_boxplot(targets: pd.DataFrame, results: pd.DataFrame, filter_fun
         return ax
 
 
-def location_summary(model: pd.DataFrame, target: pd.DataFrame, ensemble_names: pd.Series, *, title: str = '',
-                     fp: Union[str, PathLike] = None, dpi: int = 150, district_name: str = 'Ensemble') -> Axes:
+def location_summary(
+    model: pd.DataFrame,
+    target: pd.DataFrame,
+    ensemble_names: pd.Series,
+    *,
+    title: str = "",
+    fp: Union[str, PathLike] = None,
+    dpi: int = 150,
+    district_name: str = "Ensemble",
+) -> Axes:
     """Creates a compound plot showing total attractions to specified locations
 
     Args:
@@ -117,7 +134,7 @@ def location_summary(model: pd.DataFrame, target: pd.DataFrame, ensemble_names: 
         matplotlib.Axes
     """
 
-    fig, ax = plt.subplots(1, 3, figsize=[16, 8], gridspec_kw={'width_ratios': [4, 2, 2]})
+    fig, ax = plt.subplots(1, 3, figsize=[16, 8], gridspec_kw={"width_ratios": [4, 2, 2]})
 
     model_col = model.reindex(ensemble_names.index, fill_value=0)
     target_col = target.reindex(ensemble_names.index, fill_value=0)
@@ -125,7 +142,7 @@ def location_summary(model: pd.DataFrame, target: pd.DataFrame, ensemble_names: 
     factor = model_col.sum() / target_col.sum()
     target_col = target_col * factor
 
-    df = pd.DataFrame({'Model': model_col, "Target": target_col})
+    df = pd.DataFrame({"Model": model_col, "Target": target_col})
     df.index = ensemble_names
     df.index.name = district_name
     sub_ax = ax[0]
@@ -140,11 +157,11 @@ def location_summary(model: pd.DataFrame, target: pd.DataFrame, ensemble_names: 
     diff = model_col - target_col
     diff.index = short_labels
 
-    colours = pd.Series('grey', index=diff.index)
-    colours.loc[diff >= 2000] = 'skyblue'
-    colours.loc[diff >= 5000] = 'dodgerblue'
-    colours.loc[diff <= -2000] = 'lightsalmon'
-    colours.loc[diff <= -5000] = 'tomato'
+    colours = pd.Series("grey", index=diff.index)
+    colours.loc[diff >= 2000] = "skyblue"
+    colours.loc[diff >= 5000] = "dodgerblue"
+    colours.loc[diff <= -2000] = "lightsalmon"
+    colours.loc[diff <= -5000] = "tomato"
 
     diff.plot.barh(ax=sub_ax, color=colours)
     sub_ax.set_title("Error (Model - Target)")
@@ -154,11 +171,11 @@ def location_summary(model: pd.DataFrame, target: pd.DataFrame, ensemble_names: 
     perc_diff = diff / target_col
     perc_diff.index = short_labels
 
-    colours = pd.Series('grey', index=perc_diff.index)
-    colours.loc[perc_diff >= 0.1] = 'skyblue'
-    colours.loc[perc_diff >= 0.25] = 'dodgerblue'
-    colours.loc[perc_diff <= -0.1] = 'lightsalmon'
-    colours.loc[perc_diff <= -0.25] = 'tomato'
+    colours = pd.Series("grey", index=perc_diff.index)
+    colours.loc[perc_diff >= 0.1] = "skyblue"
+    colours.loc[perc_diff >= 0.25] = "dodgerblue"
+    colours.loc[perc_diff <= -0.1] = "lightsalmon"
+    colours.loc[perc_diff <= -0.25] = "tomato"
 
     perc_diff.plot.barh(ax=sub_ax, color=colours)
     sub_ax.set_title(" % Error (Model - Target) / Target")
@@ -172,11 +189,21 @@ def location_summary(model: pd.DataFrame, target: pd.DataFrame, ensemble_names: 
     return ax
 
 
-def trumpet_diagram(counts: pd.Series, model_volume: pd.Series, *, categories: Union[pd.Series, List[pd.Series]] = None,
-                    category_colours: Dict[Union[str, tuple], str] = None,
-                    category_markers: Dict[Union[str, tuple], str] = None, label_format: str = None, title: str = '',
-                    y_bounds: Tuple[float, float] = (-2, 2), ax: Axes = None, x_label: str = "Count volume",
-                    legend: bool = True, **kwargs) -> Axes:
+def trumpet_diagram(
+    counts: pd.Series,
+    model_volume: pd.Series,
+    *,
+    categories: Union[pd.Series, List[pd.Series]] = None,
+    category_colours: Dict[Union[str, tuple], str] = None,
+    category_markers: Dict[Union[str, tuple], str] = None,
+    label_format: str = None,
+    title: str = "",
+    y_bounds: Tuple[float, float] = (-2, 2),
+    ax: Axes = None,
+    x_label: str = "Count volume",
+    legend: bool = True,
+    **kwargs,
+) -> Axes:
     """Plots an auto volumes "trumpet" diagram of relative error vs. target count, and will draw min/max error curves
     based on FHWA guidelines. Can be used to plot different categories of count locations.
 
@@ -218,7 +245,7 @@ def trumpet_diagram(counts: pd.Series, model_volume: pd.Series, *, categories: U
             for s in categories:
                 assert s.index.equals(model_volume.index)
             if label_format is None:
-                label_format = '-'.join(['%s'] * len(categories))
+                label_format = "-".join(["%s"] * len(categories))
             categories = pd.MultiIndex.from_arrays(categories)
             n_categories = len(categories.unique())
         else:
@@ -232,9 +259,9 @@ def trumpet_diagram(counts: pd.Series, model_volume: pd.Series, *, categories: U
     if label_format is None:
         label_format = "%s"
 
-    df = pd.DataFrame({'Model Volume': model_volume, 'Count Volume': counts})
-    df['Error'] = df['Model Volume'] - df['Count Volume']
-    df['% Error'] = df['Error'] / df['Count Volume']
+    df = pd.DataFrame({"Model Volume": model_volume, "Count Volume": counts})
+    df["Error"] = df["Model Volume"] - df["Count Volume"]
+    df["% Error"] = df["Error"] / df["Count Volume"]
 
     if n_categories > 1:
         for category_key, subset in df.groupby(categories):
@@ -242,19 +269,26 @@ def trumpet_diagram(counts: pd.Series, model_volume: pd.Series, *, categories: U
             current_color = category_colours[category_key] if category_key in category_colours else None
             current_marker = category_markers[category_key] if category_key in category_markers else None
 
-            ax = subset.plot.scatter(x='Count Volume', y='% Error', ax=ax, c=current_color,
-                                     marker=current_marker, label=current_label, **kwargs)
+            ax = subset.plot.scatter(
+                x="Count Volume",
+                y="% Error",
+                ax=ax,
+                c=current_color,
+                marker=current_marker,
+                label=current_label,
+                **kwargs,
+            )
     else:
-        ax = df.plot.scatter(x='Count Volume', y='% Error', ax=ax, **kwargs)
+        ax = df.plot.scatter(x="Count Volume", y="% Error", ax=ax, **kwargs)
 
     top = counts.max() * 1.05  # Add 5% to the top, to give some visual room on the right side
     xs = np.arange(1, top, 10)
-    pos_ys = (-13.7722 + (555.1382 * xs ** -0.26025)) / 100.
+    pos_ys = (-13.7722 + (555.1382 * xs**-0.26025)) / 100.0
     neg_ys = pos_ys * -1
 
-    ax.plot(xs, np.zeros(len(xs)), color='black')
-    ax.plot(xs, pos_ys, color='red', linewidth=1, zorder=1)
-    ax.plot(xs, neg_ys, color='red', linewidth=1, zorder=1)
+    ax.plot(xs, np.zeros(len(xs)), color="black")
+    ax.plot(xs, pos_ys, color="red", linewidth=1, zorder=1)
+    ax.plot(xs, neg_ys, color="red", linewidth=1, zorder=1)
 
     ax.set_xlim(0, top)
 
