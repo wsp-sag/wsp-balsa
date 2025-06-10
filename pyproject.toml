@@ -25,6 +25,7 @@ matrices = [
     "numba>=0.35",
     "openmatrix",
 ]
+tables = ["h5py>=3.14.0,<4"]
 
 [project.urls]
 Homepage = "https://github.com/wsp-sag/balsa"
@@ -77,8 +78,11 @@ matplotlib = ">=3.10.0,<4"
 numba = ">=0.60.0,<0.61"
 openmatrix = ">=0.3.5.0,<0.4"
 
+[tool.pixi.feature.tables.dependencies]
+h5py = ">=3.14.0,<4"
+
 [tool.pixi.tasks]
 
 [tool.pixi.environments]
-default = ["plotting", "matrices"]
-dev = ["dev", "plotting", "matrices"]
+default = ["plotting", "matrices", "tables"]
+dev = ["dev", "matrices", "plotting", "tables"]
