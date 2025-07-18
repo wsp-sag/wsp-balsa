@@ -13,7 +13,7 @@ try:
     from inro.modeller import logbook_write
 
     EMME_ENV = True
-except ImportError:
+except (ImportError, RuntimeError):
     logbook_write = None
     EMME_ENV = False
 

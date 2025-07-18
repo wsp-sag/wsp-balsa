@@ -1,5 +1,7 @@
 # Balsa (wsp-balsa)
 
+![PyPI - Version](https://img.shields.io/pypi/v/wsp-balsa)
+
 Balsa is a collection of functions and tools for Python to facilitate travel demand forecasting applications and analyses. It is designed to work the the “scientific stack” of Python, namely NumPy, Pandas, and Matplotlib; which are optimized for speed and usability. Most of balsa consists of standalone functions - for input/output, for analysis, etc. - as well as a few lightweight class-based data structures for specific applications.
 
 > [!IMPORTANT]
@@ -24,12 +26,6 @@ Balsa can be installed with the following command:
 
 ```batch
 pip install wsp-balsa
-```
-
-or
-
-```batch
-conda install -c wsp_sap wsp-balsa
 ```
 
 ### With `pip` directly from GitHub

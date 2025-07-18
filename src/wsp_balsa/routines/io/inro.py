@@ -17,7 +17,7 @@ except ImportError:
 try:
     from cityphi.feature import Feature
     from inro.emme.agent import Table
-except ImportError:
+except (ImportError, RuntimeError):
     Feature = None
     Table = None
 
