@@ -85,6 +85,14 @@ def _parse_version(ver_str: str) -> Tuple[int, int, int]:
 
 
 def read_calibration_target_table(model_package_dict: Dict[str, Any]) -> pd.DataFrame:
+    """Reads the calibration target table from an AGENT model package specification
+
+    Args:
+        model_package_dict (dict): The AGENT model package to parse, as a Python dictionary
+
+    Returns:
+        pd.DataFrame
+    """
     if _parse_version(model_package_dict["version"]) >= _parse_version("1.3.16"):
         spec = model_package_dict["calibration_targets_table"]
         attribute_info = pd.DataFrame(spec["attribute_info"]).set_index("name")
@@ -103,6 +111,15 @@ def read_calibration_target_table(model_package_dict: Dict[str, Any]) -> pd.Data
 
 
 def read_utility_expression_table(choice_component_spec: dict) -> pd.DataFrame:
+    """Reads the utility expression table from a AGENT model step choice component
+
+    Args:
+        choice_component_spec (dict): The choice component of a model step in an AGENT model package spec, as a
+            dictionary
+
+    Returns:
+        pd.DataFrame
+    """
     attribute_info = pd.DataFrame(choice_component_spec["utility_expression_table"]["attribute_info"]).set_index("name")
     component_data = [el.split(";") for el in choice_component_spec["utility_expression_table"]["data"]]
     df = pd.DataFrame.from_records(component_data, columns=attribute_info.index.tolist())
