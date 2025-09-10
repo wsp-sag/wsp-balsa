@@ -1,5 +1,16 @@
 from __future__ import annotations
 
+__all__ = [
+    "aggregate_matrix",
+    "disaggregate_matrix",
+    "fast_stack",
+    "fast_unstack",
+    "matrix_balancing_1d",
+    "matrix_balancing_2d",
+    "matrix_bucket_rounding",
+    "split_zone_in_matrix",
+]
+
 from multiprocessing import cpu_count
 from typing import Callable, Iterable, List, Tuple, Union
 from warnings import warn
@@ -14,7 +25,6 @@ try:
 except ImportError:
 
     def njit(*args, **kwargs):
-
         def decorator(func):
             return func
 
@@ -105,12 +115,12 @@ def matrix_balancing_2d(
     # ##################################################################################
     valid_totals_to_use = ["rows", "columns", "average", "raise"]
     assert m.ndim == 2 and m.shape[0] == m.shape[1], "m must be a two-dimensional square matrix"
-    assert (
-        a.ndim == 1 and a.shape[0] == m.shape[0]
-    ), "'a' must be a one-dimensional array, whose size matches that of 'm'"
-    assert (
-        b.ndim == 1 and b.shape[0] == m.shape[0]
-    ), "'a' must be a one-dimensional array, whose size matches that of 'm'"
+    assert a.ndim == 1 and a.shape[0] == m.shape[0], (
+        "'a' must be a one-dimensional array, whose size matches that of 'm'"
+    )
+    assert b.ndim == 1 and b.shape[0] == m.shape[0], (
+        "'a' must be a one-dimensional array, whose size matches that of 'm'"
+    )
     assert totals_to_use in valid_totals_to_use, "totals_to_use must be one of %s" % valid_totals_to_use
     assert max_iterations >= 1, "max_iterations must be integer >= 1"
     assert 0 < rel_error < 1.0, "rel_error must be float between 0.0 and 1.0"
@@ -416,7 +426,6 @@ def aggregate_matrix(
 
 
 def _prep_tall_index(target_index, row_aggregator, col_aggregator):
-
     if isinstance(row_aggregator, pd.Series):
         if row_aggregator.index.equals(target_index):
             row_aggregator = row_aggregator.values
@@ -488,7 +497,7 @@ def fast_stack(
 
     assert multi_index.nlevels == 2, "Target index must be a MultiIndex with exactly 2 levels"
     assert len(multi_index) == len(frame.index) * len(frame.columns), (
-        "Target index and source index and columns do " "not have compatible lengths"
+        "Target index and source index and columns do not have compatible lengths"
     )
 
     array = np.ascontiguousarray(frame.values)
@@ -529,7 +538,7 @@ def fast_unstack(
 
     assert series.index.nlevels == 2, "Source Series must have an index with exactly 2 levels"
     assert len(series) == len(index) * len(columns), (
-        "Source index and target index and columns do not have " "compatible lengths"
+        "Source index and target index and columns do not have compatible lengths"
     )
 
     array = series.values.copy() if deep_copy else series.values[:]

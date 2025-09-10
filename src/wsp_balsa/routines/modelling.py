@@ -1,5 +1,11 @@
 from __future__ import annotations
 
+__all__ = [
+    "distance_array",
+    "distance_matrix",
+    "tlfd",
+]
+
 from typing import Any, Dict, Tuple, Union
 
 import numexpr as ne
@@ -352,7 +358,6 @@ def map_to_matrix(
     grouper_func: str = "sum",
     out_operand: str = "+",
 ) -> pd.DataFrame:
-
     # TODO: Check that `values` dtype is numeric, or at least, add-able
 
     if row_col_labels is not None:

@@ -1,5 +1,11 @@
 from __future__ import annotations
 
+__all__ = [
+    "coerce_matrix",
+    "expand_array",
+    "open_file",
+]
+
 from contextlib import contextmanager
 from io import FileIO
 from pathlib import Path

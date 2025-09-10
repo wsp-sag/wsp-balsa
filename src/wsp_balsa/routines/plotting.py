@@ -1,5 +1,11 @@
 from __future__ import annotations
 
+__all__ = [
+    "convergence_boxplot",
+    "location_summary",
+    "trumpet_diagram",
+]
+
 from os import PathLike
 from typing import Callable, Dict, List, Tuple, Union
 

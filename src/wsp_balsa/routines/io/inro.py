@@ -1,5 +1,13 @@
 from __future__ import annotations
 
+__all__ = [
+    "peek_mdf",
+    "read_emx",
+    "read_mdf",
+    "to_emx",
+    "to_mdf",
+]
+
 from io import FileIO
 from os import PathLike
 from typing import Iterable, List, Union
