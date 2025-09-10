@@ -111,9 +111,7 @@ def read_nwp_base_network(
             links.rename(columns={"lan": "lanes"}, inplace=True)
 
         # Data type conversion
-        links = links.astype(
-            {"modes": str, "type": int, "lanes": int, "vdf": int}
-        )  # simple type casting for non-float
+        links = links.astype({"modes": str, "type": int, "lanes": int, "vdf": int})  # simple type casting for non-float
         for col in ["length", "data1", "data2", "data3"]:
             if is_string_dtype(links[col]):  # these columns are usually string if values use Emme engineering notation
                 links[col] = process_emme_eng_notation_series(links[col])
@@ -336,9 +334,7 @@ def read_nwp_transit_network(
                 continue  # Skip
             elif line.startswith("a"):
                 parts = re.sub(r"\s+", " ", line.replace("'", " ")).split(" ")
-                parts = (
-                    parts[1:6] + [" ".join(parts[6:-3])] + parts[-3:]
-                )  # reconstruct parts with a joined description
+                parts = parts[1:6] + [" ".join(parts[6:-3])] + parts[-3:]  # reconstruct parts with a joined description
                 transit_lines.append(parts)
                 current_tline = parts[0]
             else:
@@ -355,14 +351,13 @@ def read_nwp_transit_network(
     transit_segs["seg_seq"] = (transit_segs.groupby("line").cumcount() + 1).astype(int)
     transit_segs["loop"] = (transit_segs.groupby(["line", "inode", "jnode"])["seg_seq"].cumcount() + 1).astype(int)
     transit_segs.dropna(inplace=True)  # remove rows without dwt, ttf, us1, us2, us3 data (i.e. the padded rows)
-    transit_segs = transit_segs[
-        ["line", "inode", "jnode", "seg_seq", "loop", "dwt", "ttf", "us1", "us2", "us3"]
-    ].copy()
+    transit_segs = transit_segs[["line", "inode", "jnode", "seg_seq", "loop", "dwt", "ttf", "us1", "us2", "us3"]].copy()
     transit_segs["dwt"] = transit_segs["dwt"].str.replace("dwt=", "", regex=False)
     transit_segs["ttf"] = transit_segs["ttf"].str.replace("ttf=", "", regex=False).astype(np.int16)
     transit_segs["us1"] = transit_segs["us1"].str.replace("us1=", "", regex=False).astype(float)
     transit_segs["us2"] = transit_segs["us2"].str.replace("us2=", "", regex=False).astype(float)
     transit_segs["us3"] = transit_segs["us3"].str.replace("us3=", "", regex=False).astype(float)
+    transit_segs.set_index(["line", "inode", "jnode"], inplace=True)
 
     # Create transit lines dataframe
     columns = ["line", "mode", "veh", "headway", "speed", "description", "data1", "data2", "data3"]
@@ -383,6 +378,7 @@ def read_nwp_transit_network(
         operator, route = parse_tmg_ncs_line_id(transit_lines["line"])
         transit_lines.insert(1, "operator", operator)
         transit_lines.insert(2, "route", route)
+    transit_lines.set_index("line", inplace=True)
 
     return transit_lines, transit_segs
 
@@ -393,7 +389,7 @@ def read_nwp_transit_result_summary(
     parse_line_id: bool = False,
 ) -> pd.DataFrame:
     """A function to read and summarize the transit assignment boardings and max volumes from a Network Package file
-    (exported from Emme using the TMG Toolbox) by operator and route.
+    (exported from Emme using the TMG Toolbox) by line or operator and route.
 
     Args:
         nwp_fp (str | PathLike): File path to the network package.
@@ -479,7 +475,7 @@ def read_nwp_transit_segment_results(
         raise FileNotFoundError(f"File `{nwp_fp.as_posix()}` not found.")
 
     _, segments = read_nwp_transit_network(nwp_fp)
-    segments.set_index(["line", "inode", "jnode", "loop"], inplace=True)
+    segments.set_index(["loop"], append=True, inplace=True)
 
     with zipfile.ZipFile(nwp_fp) as zf:
         results = pd.read_csv(zf.open("segment_results.csv"), index_col=["line", "i", "j", "loop"])
@@ -497,6 +493,7 @@ def read_nwp_transit_segment_results(
 
     segments.drop(["dwt", "ttf", "us1", "us2", "us3", "prev_seg_volume"], axis=1, inplace=True)
     segments = segments[["line", "inode", "jnode", "seg_seq", "loop", "boardings", "alightings", "volume"]].copy()
+    segments.set_index(["line", "inode", "jnode"], inplace=True)
 
     return segments
 
