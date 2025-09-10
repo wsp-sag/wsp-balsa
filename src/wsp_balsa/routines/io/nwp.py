@@ -372,6 +372,7 @@ def read_nwp_transit_network(
     transit_segs["us1"] = transit_segs["us1"].str.replace("us1=", "", regex=False).astype(float)
     transit_segs["us2"] = transit_segs["us2"].str.replace("us2=", "", regex=False).astype(float)
     transit_segs["us3"] = transit_segs["us3"].str.replace("us3=", "", regex=False).astype(float)
+    transit_segs.set_index(["line", "inode", "jnode"], inplace=True)
 
     # Create transit lines dataframe
     columns = ["line", "mode", "veh", "headway", "speed", "description", "data1", "data2", "data3"]
@@ -392,6 +393,7 @@ def read_nwp_transit_network(
         operator, route = parse_tmg_ncs_line_id(transit_lines["line"])
         transit_lines.insert(1, "operator", operator)
         transit_lines.insert(2, "route", route)
+    transit_lines.set_index("line", inplace=True)
 
     return transit_lines, transit_segs
 
@@ -402,7 +404,7 @@ def read_nwp_transit_result_summary(
     parse_line_id: bool = False,
 ) -> pd.DataFrame:
     """A function to read and summarize the transit assignment boardings and max volumes from a Network Package file
-    (exported from Emme using the TMG Toolbox) by operator and route.
+    (exported from Emme using the TMG Toolbox) by line or operator and route.
 
     Args:
         nwp_fp (str | PathLike): File path to the network package.
@@ -488,7 +490,7 @@ def read_nwp_transit_segment_results(
         raise FileNotFoundError(f"File `{nwp_fp.as_posix()}` not found.")
 
     _, segments = read_nwp_transit_network(nwp_fp)
-    segments.set_index(["line", "inode", "jnode", "loop"], inplace=True)
+    segments.set_index(["loop"], append=True, inplace=True)
 
     with zipfile.ZipFile(nwp_fp) as zf:
         results = pd.read_csv(zf.open("segment_results.csv"), index_col=["line", "i", "j", "loop"])
@@ -506,6 +508,7 @@ def read_nwp_transit_segment_results(
 
     segments.drop(["dwt", "ttf", "us1", "us2", "us3", "prev_seg_volume"], axis=1, inplace=True)
     segments = segments[["line", "inode", "jnode", "seg_seq", "loop", "boardings", "alightings", "volume"]].copy()
+    segments.set_index(["line", "inode", "jnode"], inplace=True)
 
     return segments
 
