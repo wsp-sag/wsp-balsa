@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+__all__ = [
+    "generate_time_bin_labels",
+]
+
 from datetime import datetime, timedelta
 from typing import Dict
 

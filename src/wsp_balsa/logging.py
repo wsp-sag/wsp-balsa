@@ -1,3 +1,13 @@
+from __future__ import annotations
+
+__all__ = [
+    "LogFormats",
+    "ModelLogger",
+    "init_root",
+    "get_model_logger",
+    "log_to_file",
+]
+
 import logging
 import sys
 import traceback as tb
@@ -45,7 +55,6 @@ class LogFormats(Enum):
 
 
 class _RangeFilter(object):
-
     def __init__(self, low: int, high: int):
         self._low = int(low)
         self._high = int(high)
@@ -61,7 +70,6 @@ class _RangeFilter(object):
 
 
 class _SwitchFormatter(Formatter):
-
     def __init__(self, default_format: Union[Formatter, str], level_formats: Dict[int, Union[Formatter, str]]):
         super(_SwitchFormatter, self).__init__()
 
@@ -79,7 +87,6 @@ class _SwitchFormatter(Formatter):
 
 
 class _JsonFormatter(Formatter):
-
     def format(self, record: LogRecord) -> str:
         keys = ["levelname", "name", "msg", "created", "levelno"]
         to_json = {key: getattr(record, key) for key in keys}
@@ -91,7 +98,6 @@ class _JsonFormatter(Formatter):
 
 
 class ModelLogger(Logger):
-
     def __init__(self, name: str, level: int = logging.NOTSET):
         """ModelLogger extends the standard Python Logger, adding additional statements such as ``.report()``."""
         super(ModelLogger, self).__init__(name, level)
