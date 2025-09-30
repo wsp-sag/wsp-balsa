@@ -130,22 +130,30 @@ def read_utility_expression_table(choice_component_dict: dict) -> pd.DataFrame:
     component_data = [el.split(";") for el in choice_component_dict["utility_expression_table"]["data"]]
     df = pd.DataFrame.from_records(component_data, columns=attribute_info.index.tolist())
     if not df.empty:
+        # Handle wide format
         if choice_component_dict["utility_specification_type"] == "wide":
             df.set_index(["description", "agent_filter", "agent_expression"], inplace=True)
             df.columns.name = "alternative_filter"
             df = df.stack().to_frame("coefficient").reset_index()
             df["alternative_filter"] = df["alternative_filter"].map(attribute_info["description"])
             df["alternative_expression"] = ""
-            df = df[
-                [
-                    "description",
-                    "alternative_filter",
-                    "alternative_expression",
-                    "agent_filter",
-                    "agent_expression",
-                    "coefficient",
-                ]
-            ].copy()
+
+        # Finalize
+        if "agent_filter" not in df:
+            df["agent_filter"] = ""
+        if "agent_expression" not in df:
+            df["agent_expression"] = ""
+        df = df[
+            [
+                "description",
+                "alternative_filter",
+                "alternative_expression",
+                "agent_filter",
+                "agent_expression",
+                "coefficient",
+            ]
+        ].copy()
+
     return df
 
 
