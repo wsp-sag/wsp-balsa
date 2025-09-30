@@ -116,6 +116,28 @@ def read_calibration_target_table(model_package_dict: Dict[str, Any]) -> pd.Data
     return df.set_index("name")
 
 
+def read_choice_model_components(model_step_dict: Dict[str, Any]) -> pd.DataFrame:
+    """Reads the choice components from an AGENT choice model step
+
+    Args:
+        model_step_dict (dict): The choice component model step to read in an AGENT model package spec, as a dictionary
+
+    Returns:
+        pd.DataFrame
+    """
+    if model_step_dict["procedure_type"] != "CHOICE_MODEL":
+        raise ValueError(f"Model step `{model_step_dict['name']}` is not a choice model")
+    choice_components = []
+    for i, spec in enumerate(model_step_dict["choice_components"]):
+        df = read_utility_expression_table(spec)
+        df.insert(0, "choice_component_id", i)
+        df.insert(1, "choice_component_name", spec["name"])
+        choice_components.append(df)
+    choice_components: pd.DataFrame = pd.concat(choice_components, axis=0, ignore_index=True)
+
+    return choice_components
+
+
 def read_utility_expression_table(choice_component_dict: dict) -> pd.DataFrame:
     """Reads the utility expression table from an AGENT model step choice component
 
