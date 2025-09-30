@@ -2,6 +2,8 @@ from __future__ import annotations
 
 __all__ = [
     "read_feat",
+    "read_choice_model_component_tables",
+    "read_utility_expression_table",
     "read_calibration_target_table",
     "read_utility_expression_table",
 ]
@@ -116,7 +118,7 @@ def read_calibration_target_table(model_package_dict: Dict[str, Any]) -> pd.Data
     return df.set_index("name")
 
 
-def read_choice_model_components(model_step_dict: Dict[str, Any]) -> pd.DataFrame:
+def read_choice_model_component_tables(model_step_dict: Dict[str, Any]) -> pd.DataFrame:
     """Reads the choice components from an AGENT choice model step
 
     Args:
