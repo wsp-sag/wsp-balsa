@@ -2,10 +2,10 @@ from __future__ import annotations
 
 __all__ = [
     "read_feat",
+    "read_table_calculator_result_attributes",
     "read_choice_model_component_tables",
     "read_utility_expression_table",
     "read_calibration_target_table",
-    "read_utility_expression_table",
 ]
 
 from json import loads
@@ -138,6 +138,22 @@ def read_choice_model_component_tables(model_step_dict: Dict[str, Any]) -> pd.Da
     choice_components: pd.DataFrame = pd.concat(choice_components, axis=0, ignore_index=True)
 
     return choice_components
+
+
+def read_table_calculator_result_attributes(model_step_dict: Dict[str, Any]) -> pd.DataFrame:
+    """Reads the result attributes from an AGENT table calculator model step
+
+    Args:
+        model_step_dict (dict): The table calculator model step to read in an AGENT model package spec, as a dictionary
+
+    Returns:
+        pd.DataFrame
+    """
+    if model_step_dict["procedure_type"] != "TABLE_CALCULATOR":
+        raise ValueError(f"Model step `{model_step_dict['name']}` is not a table calculator")
+    df = pd.DataFrame(model_step_dict["result_attributes"])
+
+    return df
 
 
 def read_utility_expression_table(choice_component_dict: dict) -> pd.DataFrame:
