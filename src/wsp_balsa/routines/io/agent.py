@@ -116,21 +116,21 @@ def read_calibration_target_table(model_package_dict: Dict[str, Any]) -> pd.Data
     return df.set_index("name")
 
 
-def read_utility_expression_table(choice_component_spec: dict) -> pd.DataFrame:
-    """Reads the utility expression table from a AGENT model step choice component
+def read_utility_expression_table(choice_component_dict: dict) -> pd.DataFrame:
+    """Reads the utility expression table from an AGENT model step choice component
 
     Args:
-        choice_component_spec (dict): The choice component of a model step in an AGENT model package spec, as a
+        choice_component_dict (dict): The choice component of a model step in an AGENT model package spec, as a
             dictionary
 
     Returns:
         pd.DataFrame
     """
-    attribute_info = pd.DataFrame(choice_component_spec["utility_expression_table"]["attribute_info"]).set_index("name")
-    component_data = [el.split(";") for el in choice_component_spec["utility_expression_table"]["data"]]
+    attribute_info = pd.DataFrame(choice_component_dict["utility_expression_table"]["attribute_info"]).set_index("name")
+    component_data = [el.split(";") for el in choice_component_dict["utility_expression_table"]["data"]]
     df = pd.DataFrame.from_records(component_data, columns=attribute_info.index.tolist())
     if not df.empty:
-        if choice_component_spec["utility_specification_type"] == "wide":
+        if choice_component_dict["utility_specification_type"] == "wide":
             df.set_index(["description", "agent_filter", "agent_expression"], inplace=True)
             df.columns.name = "alternative_filter"
             df = df.stack().to_frame("coefficient").reset_index()
