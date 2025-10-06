@@ -17,6 +17,7 @@ __all__ = [
 
 import re
 import zipfile
+from io import IOBase, TextIOBase, TextIOWrapper
 from os import PathLike
 from pathlib import Path
 from typing import Hashable, List, Tuple, Union
@@ -47,26 +48,53 @@ def process_emme_eng_notation_series(s: pd.Series, *, to_dtype=float) -> pd.Seri
     return values * units
 
 
-def read_nwp_base_network(
-    nwp_fp: Union[str, PathLike],
-) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """A function to read the base network from a Network Package file (exported from Emme using the TMG Toolbox) into
-    DataFrames.
+def _open_nwp(nwp_fp: Union[str, PathLike]) -> zipfile.ZipFile:
+    """Open a Network Package file for reading.
 
-    Args:
-        nwp_fp (str | PathLike): File path to the network package.
-
-    Returns:
-        Tuple[pd.DataFrame, pd.DataFrame]: A tuple of DataFrames containing the nodes and links
+    Helper which checks for existence of network package before opening.
     """
     nwp_fp = Path(nwp_fp)
     if not nwp_fp.exists():
-        raise FileNotFoundError(f"File `{nwp_fp.as_posix()}` not found.")
+        raise FileNotFoundError(f"Network Package file `{nwp_fp.as_posix()}` not found.")
 
-    header_nodes, header_links, last_line = None, None, None
-    with zipfile.ZipFile(nwp_fp) as zf:
-        for i, line in enumerate(zf.open("base.211"), start=1):
-            line = line.strip().decode("utf-8")
+    return zipfile.ZipFile(nwp_fp)
+
+
+def _get_file_object(file_obj: Union[str, PathLike, IOBase]) -> TextIOBase:
+    """Get a file object which reads strings.
+
+    Helper method to gracefully handle reading files from str or Path filepaths,
+    as well as binary text files (such as the files returned by ``ZipFile.open``).
+    """
+    if isinstance(file_obj, TextIOBase):
+        return file_obj
+    if isinstance(file_obj, IOBase):
+        return TextIOWrapper(file_obj, encoding="utf-8")
+
+    fp = Path(file_obj)
+    if not fp.exists():
+        raise FileNotFoundError(f"File `{fp.as_posix()}` not found.")
+    return open(fp, "r", encoding="utf-8")
+
+
+def read_base_network_transaction(
+        network_transaction_file: Union[str, PathLike, IOBase]
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Read an EMME base network transaction.
+
+    Args:
+        network_transaction_file: (str | PathLike | IOBase): Path to the network
+            transaction file, or a file object for a network transaction file.
+
+    Returns:
+        Tuple[pd.DataFrame, pd.DataFrame]: A tuple of DataFrames containing the nodes and links.
+    """
+
+    with _get_file_object(network_transaction_file) as open_file:
+        # Determine start of nodes and links
+        header_nodes, header_links, last_line = None, None, None
+        for i, line in enumerate(open_file, start=1):
+            line = line.strip()
             if line.startswith("c"):
                 continue  # Skip comment lines
             if line.startswith("t nodes"):
@@ -87,8 +115,10 @@ def read_nwp_base_network(
             "Data3": float,
             "Label": str,
         }
+
+        open_file.seek(0)
         nodes = pd.read_csv(
-            zf.open("base.211"),
+            open_file,
             index_col="Node",
             dtype=data_types,
             skiprows=header_nodes,
@@ -104,8 +134,9 @@ def read_nwp_base_network(
 
         # Read links
         n_rows = last_line - header_links - 1
+        open_file.seek(0)
         links = pd.read_csv(
-            zf.open("base.211"),
+            open_file,
             index_col=["From", "To"],
             skiprows=header_links,
             nrows=n_rows,
@@ -134,6 +165,23 @@ def read_nwp_base_network(
                 links[col] = links[col].astype(float)
 
     return nodes, links
+
+
+def read_nwp_base_network(
+    nwp_fp: Union[str, PathLike],
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """A function to read the base network from a Network Package file (exported from Emme using the TMG Toolbox) into
+    DataFrames.
+
+    Args:
+        nwp_fp (str | PathLike): File path to the network package.
+
+    Returns:
+        Tuple[pd.DataFrame, pd.DataFrame]: A tuple of DataFrames containing the nodes and links
+    """
+    with _open_nwp(nwp_fp) as zf:
+        base_transaction_file = zf.open("base.211")
+        return read_base_network_transaction(base_transaction_file)
 
 
 def read_nwp_exatts_list(
