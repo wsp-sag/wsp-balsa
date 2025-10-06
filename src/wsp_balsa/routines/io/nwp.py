@@ -167,6 +167,129 @@ def read_base_network_transaction(
     return nodes, links
 
 
+def read_exatts_list(
+    exatts_file: Union[str, PathLike, IOBase],
+    **kwargs,
+) -> pd.DataFrame:
+    """Read extra attributes definitions exported from EMME.
+
+    Args:
+        exatts_file (str | PathLike | IOBase): Path to the exatts file,
+            or a file object for an exatts file.
+        **kwargs: Any valid keyword arguments used by ``pandas.read_csv()``.
+
+    Returns:
+        pd.DataFrame
+    """
+    kwargs["index_col"] = False
+    if "quotechar" not in kwargs:
+        kwargs["quotechar"] = "'"
+
+    with _get_file_object(exatts_file) as open_file:
+        df: pd.DataFrame = pd.read_csv(open_file, **kwargs)
+        df.columns = df.columns.str.strip()
+        df["type"] = df["type"].astype("category")
+
+    return df
+
+
+def _base_read_extatts(
+    exatts_file: Union[str, PathLike, IOBase],
+    index_col: Union[str, List[str]],
+    attributes: Union[str, List[str]] = None,
+    **kwargs,
+) -> pd.DataFrame:
+    if attributes is not None:
+        if isinstance(attributes, Hashable):
+            attributes = [attributes]
+        elif isinstance(attributes, list):
+            pass
+        else:
+            raise RuntimeError
+
+    if "quotechar" not in kwargs:
+        kwargs["quotechar"] = "'"
+
+    with _get_file_object(exatts_file) as open_file:
+        df: pd.DataFrame = pd.read_csv(open_file, **kwargs)
+        df.columns = df.columns.str.strip()
+        for col in df.columns:
+            if is_string_dtype(df[col]):
+                df[col] = df[col].str.strip()
+        df.set_index(index_col, inplace=True)
+
+    if attributes is not None:
+        df = df[attributes].copy()
+
+    return df
+
+
+def read_node_extra_attributes(
+    exatts_file: Union[str, PathLike, IOBase],
+    *,
+    attributes: Union[str, List[str]] = None,
+    **kwargs,
+) -> pd.DataFrame:
+    """Read node attributes exported from EMME.
+
+    Args:
+        exatts_file (str | PathLike | IOBase): Path or file object corresponding to
+            an extra attributes file.
+        attributes (str | List[str], optional): Defaults to ``None``.
+            Names of node attributes to extract.
+            Note that ``'inode'`` will be included by default.
+        **kwargs: Any valid keyword arguments used by ``pandas.read_csv()``.
+
+    Returns:
+        pd.DataFrame
+    """
+    return _base_read_extatts(exatts_file, "inode", attributes, **kwargs)
+
+
+def read_link_extra_attributes(
+    exatts_file: Union[str, PathLike, IOBase],
+    *,
+    attributes: Union[str, List[str]] = None,
+    **kwargs,
+) -> pd.DataFrame:
+    """Read link attributes exported from EMME.
+
+    Args:
+        exatts_file (str | PathLike | IOBase): Path or file object corresponding to
+            an extra attributes file.
+        attributes (str | List[str], optional): Defaults to ``None``.
+            Names of link attributes to extract.
+            Note that ``'inode'`` and ``'jnode'`` will be included by default.
+        **kwargs: Any valid keyword arguments used by ``pandas.read_csv()``.
+
+    Returns:
+        pd.DataFrame
+    """
+    return _base_read_extatts(exatts_file, ["inode", "jnode"], attributes, **kwargs)
+
+
+def read_transit_line_extra_attributes(
+    exatts_file: Union[str, PathLike, IOBase],
+    *,
+    attributes: Union[str, List[str]] = None,
+    **kwargs,
+) -> pd.DataFrame:
+    """Read transit line attributes exported from EMME.
+
+    Args:
+        exatts_file (str | PathLike | IOBase): Path or file object corresponding to
+            an extra attributes file.
+        attributes (str | List[str], optional): Defaults to ``None``.
+            Names of transit line attributes to extract.
+            Note that ``'line'`` will be included by default.
+        **kwargs: Any valid keyword arguments used by ``pandas.read_csv()``.
+
+    Returns:
+        pd.DataFrame
+    """
+    return _base_read_extatts(exatts_file, "line", attributes, **kwargs)
+
+
 def read_nwp_base_network(
     nwp_fp: Union[str, PathLike],
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
@@ -198,56 +321,9 @@ def read_nwp_exatts_list(
     Returns:
         pd.DataFrame
     """
-    nwp_fp = Path(nwp_fp)
-    if not nwp_fp.exists():
-        raise FileNotFoundError(f"File `{nwp_fp.as_posix()}` not found.")
-
-    kwargs["index_col"] = False
-    if "quotechar" not in kwargs:
-        kwargs["quotechar"] = "'"
-
-    with zipfile.ZipFile(nwp_fp) as zf:
-        df: pd.DataFrame = pd.read_csv(zf.open("exatts.241"), **kwargs)
-        df.columns = df.columns.str.strip()
-        df["type"] = df["type"].astype("category")
-
-    return df
-
-
-def _base_read_nwp_att_data(
-    nwp_fp: Union[str, PathLike],
-    att_type: str,
-    index_col: Union[str, List[str]],
-    attributes: Union[str, List[str]] = None,
-    **kwargs,
-) -> pd.DataFrame:
-    nwp_fp = Path(nwp_fp)
-    if not nwp_fp.exists():
-        raise FileNotFoundError(f"File `{nwp_fp.as_posix()}` not found.")
-
-    if attributes is not None:
-        if isinstance(attributes, Hashable):
-            attributes = [attributes]
-        elif isinstance(attributes, list):
-            pass
-        else:
-            raise RuntimeError
-
-    if "quotechar" not in kwargs:
-        kwargs["quotechar"] = "'"
-
-    with zipfile.ZipFile(nwp_fp) as zf:
-        df: pd.DataFrame = pd.read_csv(zf.open(f"exatt_{att_type}.241"), **kwargs)
-        df.columns = df.columns.str.strip()
-        for col in df.columns:
-            if is_string_dtype(df[col]):
-                df[col] = df[col].str.strip()
-        df.set_index(index_col, inplace=True)
-
-    if attributes is not None:
-        df = df[attributes].copy()
-
-    return df
+    with _open_nwp(nwp_fp) as zf:
+        exatts_file = zf.open("exatts.241")
+        return read_exatts_list(exatts_file, **kwargs)
 
 
 def read_nwp_node_attributes(
@@ -267,7 +343,9 @@ def read_nwp_node_attributes(
     Returns:
         pd.DataFrame
     """
-    return _base_read_nwp_att_data(nwp_fp, "nodes", "inode", attributes, **kwargs)
+    with _open_nwp(nwp_fp) as zf:
+        ea_file = zf.open(f"exatt_nodes.241")
+        return read_node_extra_attributes(ea_file, attributes=attributes, **kwargs)
 
 
 def read_nwp_link_attributes(
@@ -287,7 +365,9 @@ def read_nwp_link_attributes(
     Returns:
         pd.DataFrame
     """
-    return _base_read_nwp_att_data(nwp_fp, "links", ["inode", "jnode"], attributes, **kwargs)
+    with _open_nwp(nwp_fp) as zf:
+        ea_file = zf.open(f"exatt_links.241")
+        return read_link_extra_attributes(ea_file, attributes=attributes, **kwargs)
 
 
 def read_nwp_transit_line_attributes(
@@ -308,7 +388,9 @@ def read_nwp_transit_line_attributes(
     Returns:
         pd.DataFrame
     """
-    return _base_read_nwp_att_data(nwp_fp, "transit_lines", "line", attributes, **kwargs)
+    with _open_nwp(nwp_fp) as zf:
+        ea_file = zf.open(f"exatt_transit_lines.241")
+        return read_transit_line_extra_attributes(ea_file, attributes=attributes, **kwargs)
 
 
 def read_nwp_traffic_results(
