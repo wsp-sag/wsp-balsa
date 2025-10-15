@@ -1,7 +1,9 @@
 __all__ = [
     "read_feat",
-    "read_calibration_target_table",
+    "read_table_calculator_result_attributes",
+    "read_choice_model_component_tables",
     "read_utility_expression_table",
+    "read_calibration_target_table",
     "coerce_matrix",
     "expand_array",
     "open_file",
@@ -29,7 +31,13 @@ __all__ = [
     "to_omx",
 ]
 
-from .agent import read_calibration_target_table, read_feat, read_utility_expression_table
+from .agent import (
+    read_calibration_target_table,
+    read_choice_model_component_tables,
+    read_feat,
+    read_table_calculator_result_attributes,
+    read_utility_expression_table,
+)
 from .common import coerce_matrix, expand_array, open_file
 from .fortran import read_fortran_rectangle, read_fortran_square, to_fortran
 from .inro import peek_mdf, read_emx, read_mdf, to_emx, to_mdf
