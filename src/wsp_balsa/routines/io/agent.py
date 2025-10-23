@@ -4,6 +4,7 @@ __all__ = [
     "read_feat",
     "read_table_calculator_result_attributes",
     "read_choice_model_component_tables",
+    "read_choice_model_calibration_automata_table",
     "read_utility_expression_table",
     "read_calibration_target_table",
 ]
@@ -138,6 +139,28 @@ def read_choice_model_component_tables(model_step_dict: Dict[str, Any]) -> pd.Da
     choice_components: pd.DataFrame = pd.concat(choice_components, axis=0, ignore_index=True)
 
     return choice_components
+
+
+def read_choice_model_calibration_automata_table(model_step_dict: Dict[str, Any]) -> pd.DataFrame:
+    """Reads the calibration instructions table from an AGENT choice model step
+
+    Args:
+        model_step_dict (dict): The choice component model step to read in an AGENT model package spec, as a dictionary
+
+    Returns:
+        pd.DataFrame
+    """
+    if model_step_dict["procedure_type"] != "CHOICE_MODEL":
+        raise ValueError(f"Model step `{model_step_dict['name']}` is not a choice model")
+    spec = model_step_dict["calibration_automata_table"]
+    attribute_info = pd.DataFrame(spec["attribute_info"]).set_index("name")
+    component_data = [el.split(";") for el in spec["data"]]
+    df = pd.DataFrame.from_records(component_data, columns=attribute_info.index.tolist())
+    df["value"] = pd.to_numeric(df["value"])
+    df["min_calibrated_value"] = pd.to_numeric(df["min_calibrated_value"])
+    df["max_calibrated_value"] = pd.to_numeric(df["max_calibrated_value"])
+
+    return df
 
 
 def read_table_calculator_result_attributes(model_step_dict: Dict[str, Any]) -> pd.DataFrame:

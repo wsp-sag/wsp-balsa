@@ -2,6 +2,7 @@ __all__ = [
     "read_feat",
     "read_table_calculator_result_attributes",
     "read_choice_model_component_tables",
+    "read_choice_model_calibration_automata_table",
     "read_utility_expression_table",
     "read_calibration_target_table",
     "coerce_matrix",
@@ -33,6 +34,7 @@ __all__ = [
 
 from .agent import (
     read_calibration_target_table,
+    read_choice_model_calibration_automata_table,
     read_choice_model_component_tables,
     read_feat,
     read_table_calculator_result_attributes,
