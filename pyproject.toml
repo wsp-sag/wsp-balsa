@@ -6,7 +6,7 @@ readme = "README.md"
 authors = [
     { name = "Brian Cheung", email = "brian.cheung@wsp.com" }
 ]
-requires-python = ">=3.7,<3.14"
+requires-python = ">=3.9,<3.14"
 classifiers = [
     "Development Status :: 4 - Beta",
     "License :: OSI Approved :: BSD License",
