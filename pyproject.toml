@@ -1,11 +1,12 @@
 [project]
 name = "wsp-balsa"
+description = "Python tools for travel demand forecasting applications and analyses"
 dynamic = ["version"]
+readme = "README.md"
 authors = [
     { name = "Brian Cheung", email = "brian.cheung@wsp.com" }
 ]
-description = "Python tools for travel demand forecasting applications and analyses"
-readme = "README.md"
+requires-python = ">=3.7,<3.14"
 classifiers = [
     "Development Status :: 4 - Beta",
     "License :: OSI Approved :: BSD License",
@@ -13,19 +14,33 @@ classifiers = [
     "Programming Language :: Python :: 3"
 ]
 dependencies = [
-    'pandas>=0.24',
-    'numpy>=1.21',
-    'numexpr>=2.6'
+    "pandas>=0.24",
+    "numpy>=1.21",
+    "numexpr>=2.6",
 ]
-requires-python = ">=3.7,<3.14"
 
 [project.optional-dependencies]
-plotting = ["matplotlib>=3.0"]
+plotting = [
+    "matplotlib>=3.0",
+]
 matrices = [
     "numba>=0.35",
     "openmatrix",
 ]
-tables = ["h5py>=3.14.0,<4"]
+tables = [
+    "h5py>=3.8.0",
+]
+
+[dependency-groups]
+dev = [
+    "build>=1.1.1",
+    "ipykernel>=6.16.2",
+    "pydata-sphinx-theme>=0.13.3",
+    "pytest>=7.4.4",
+    "sphinx>=5.3.0",
+    "sphinx-favicon>=1.0.1",
+    "twine>=4.0.2",
+]
 
 [project.urls]
 Homepage = "https://github.com/wsp-sag/balsa"
@@ -34,12 +49,6 @@ Issues = "https://github.com/wsp-sag/balsa/issues"
 [build-system]
 requires = ["setuptools>=64", "setuptools-scm>=8"]
 build-backend = "setuptools.build_meta"
-
-[dependency-groups]
-dev = [
-    "build>=1.2.2.post1,<2",
-    "twine>=6.0.1,<7"
-]
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -53,37 +62,6 @@ addopts = [
 ]
 pythonpath = "src"
 
-[tool.pixi.project]
-channels = ["conda-forge"]
-platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
-
-[tool.pixi.dependencies]
-pandas = ">=2.2.3,<3"
-numpy = ">=2.0.2,<3"
-numexpr = ">=2.10.2,<3"
-
-[tool.pixi.pypi-dependencies]
-wsp_balsa = { path = ".", editable = true }
-
-[tool.pixi.feature.dev.dependencies]
-sphinx = ">=8.1.3,<9"
-sphinx-favicon = ">=1.0.1,<2"
-pydata-sphinx-theme = ">=0.16.1,<0.17"
-pytest = ">=8.3.4,<9"
-ipykernel = ">=6.30.1,<7"
-
-[tool.pixi.feature.plotting.dependencies]
-matplotlib = ">=3.10.0,<4"
-
-[tool.pixi.feature.matrices.dependencies]
-numba = ">=0.60.0,<0.62"
-openmatrix = ">=0.3.5.0,<0.4"
-
-[tool.pixi.feature.tables.dependencies]
-h5py = ">=3.14.0,<4"
-
-[tool.pixi.tasks]
-
-[tool.pixi.environments]
-default = ["plotting", "matrices", "tables"]
-dev = ["dev", "matrices", "plotting", "tables"]
+[tool.ruff]
+line-length = 120
+target-version = "py311"
