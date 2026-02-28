@@ -418,21 +418,25 @@ def read_nwp_transit_result_summary(
     if not nwp_fp.exists():
         raise FileNotFoundError(f"File `{nwp_fp.as_posix()}` not found.")
 
+    col_names = {
+        "transit_boardings": "boardings",
+        "transit_volume": "total_volume",
+        "transit_time": "total_transit_time",
+    }
+
     with zipfile.ZipFile(nwp_fp) as zf:
-        data_types = {"line": str, "transit_boardings": float, "transit_volume": float}
+        data_types = {"line": str, **{col: float for col in col_names.keys()}}
         df = pd.read_csv(zf.open("segment_results.csv"), usecols=data_types.keys(), dtype=data_types)
         if parse_line_id:
             operator, route = parse_tmg_ncs_line_id(df["line"])
             df["operator"] = operator
             df["route"] = route.str.zfill(route.str.len().max())  # Pad with 0s for groupby sorting purposes
-            df = df.groupby(["operator", "route"], as_index=False).agg(
-                {"transit_boardings": "sum", "transit_volume": "sum"}
-            )
+            df = df.groupby(["operator", "route"], as_index=False)[list(col_names.keys())].sum()
             df["route"] = df["route"].str.lstrip("0")  # Remove 0s padding
             df.set_index(["operator", "route"], inplace=True)
         else:
-            df.set_index("line", inplace=True)
-        df.rename(columns={"transit_boardings": "boardings", "transit_volume": "total_volume"}, inplace=True)
+            df = df.groupby("line")[list(col_names.keys())].sum()
+        df.rename(columns=col_names, inplace=True)
 
     return df
 
@@ -496,6 +500,7 @@ def read_nwp_transit_segment_results(
         results = pd.read_csv(zf.open("segment_results.csv"), index_col=["line", "i", "j", "loop"])
 
     segments["boardings"] = results["transit_boardings"].round(3)
+    segments["transit_times"] = results["transit_time"]
     segments["volume"] = results["transit_volume"].round(3)
     n_missing_segments = len(segments[segments["boardings"].isnull()])
     if n_missing_segments > 0:
@@ -507,8 +512,8 @@ def read_nwp_transit_segment_results(
     segments["alightings"] = segments.eval("prev_seg_volume + boardings - volume").round(3)
 
     segments.drop(["dwt", "ttf", "us1", "us2", "us3", "prev_seg_volume"], axis=1, inplace=True)
-    segments = segments[["line", "inode", "jnode", "seg_seq", "loop", "boardings", "alightings", "volume"]].copy()
     segments.set_index(["line", "inode", "jnode"], inplace=True)
+    segments = segments[["seg_seq", "loop", "boardings", "alightings", "volume", "transit_times"]].copy()
 
     return segments
 
