@@ -93,7 +93,7 @@ def read_nwp_base_network(
             dtype=data_types,
             skiprows=header_nodes,
             nrows=n_rows,
-            delim_whitespace=True,
+            sep="\s+",
         )
         nodes.columns = nodes.columns.str.lower()
         nodes.columns = nodes.columns.str.strip()
@@ -109,7 +109,7 @@ def read_nwp_base_network(
             index_col=["From", "To"],
             skiprows=header_links,
             nrows=n_rows,
-            delim_whitespace=True,
+            sep="\s+",
             low_memory=False,
         )
         links.columns = links.columns.str.lower()
@@ -565,7 +565,7 @@ def read_nwp_transit_vehicles(
             dtype=data_types,
             skiprows=header,
             quotechar="'",
-            delim_whitespace=True,
+            sep="\s+",
         )
         vehicles.index.name = "veh_id"
 
