@@ -15,7 +15,7 @@ Balsa is a collection of functions and tools for Python to facilitate travel dem
 - Pretty Logging utilities for use in program applications
 - and more!
 
-Balsa is compatible with Python 3.7+
+Balsa is compatible with Python 3.9+
 
 ## Installation
 
