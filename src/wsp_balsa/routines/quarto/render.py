@@ -1,6 +1,7 @@
 # Based on https://github.com/quarto-dev/quarto-python/blob/main/quarto/render.py with modifications
 # License under MIT License
 # Copyright (c) 2020-2025 Posit Software, PBC
+
 from __future__ import annotations
 
 __all__ = [

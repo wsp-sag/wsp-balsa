@@ -27,6 +27,10 @@ matrices = [
     "numba>=0.35",
     "openmatrix",
 ]
+quarto = [
+    "pyyaml>=6.0.3",
+    "quarto-cli>=1.8.27",
+]
 tables = [
     "h5py>=3.8.0",
 ]
