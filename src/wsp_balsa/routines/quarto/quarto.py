@@ -17,4 +17,4 @@ def find_quarto() -> Path:
     if quarto_exe is None:
         raise FileNotFoundError("Quarto executable not found")
 
-    return Path(quarto_exe)
+    return Path(quarto_exe).resolve(strict=True)
