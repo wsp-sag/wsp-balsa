@@ -39,16 +39,16 @@ def render(
     params_file = None
 
     # build args
-    args = ["render", f'"{input}"']
+    args = [find_quarto().as_posix(), "render", str(input)]
 
     if output_format is not None:
         args.extend(["--to", output_format])
 
     if output_file is not None:
-        args.extend(["--output", f'"{output_file}"'])
+        args.extend(["--output", str(output_file)])
 
     if output_dir is not None:
-        args.extend(["--output-dir", f'"{output_dir}"'])
+        args.extend(["--output-dir", str(output_dir)])
 
     if execute is not None:
         if execute is True:
@@ -60,10 +60,10 @@ def render(
         params_file = tempfile.NamedTemporaryFile(mode="w", prefix="quarto-params", suffix=".yml", delete=False)
         yaml.dump(execute_params, params_file)
         params_file.close()
-        args.extend(["--execute-params", f'"{params_file.name}"'])
+        args.extend(["--execute-params", str(params_file.name)])
 
     if execute_dir is not None:
-        args.extend(["--execute-dir", f'"{execute_dir}"'])
+        args.extend(["--execute-dir", str(execute_dir)])
 
     if cache is not None:
         if cache is True:
@@ -87,7 +87,7 @@ def render(
         args.append("--quiet")
 
     # run process
-    process = sp.Popen([f"{find_quarto().as_posix()}"] + args, stdout=sp.PIPE, stderr=sp.PIPE, text=True)
+    process = sp.Popen(args, stdout=sp.PIPE, stderr=sp.PIPE, text=True)
     try:
         while process.poll() is None:
             line = process.stderr.readline()  # Quarto writes progress info to stderr, so we read from there
