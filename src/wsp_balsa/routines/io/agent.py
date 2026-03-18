@@ -9,9 +9,10 @@ __all__ = [
     "read_calibration_target_table",
 ]
 
+import warnings
 from json import loads
 from os import PathLike
-from typing import Any, Dict, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import pandas as pd
 
@@ -35,7 +36,7 @@ if (h5py is None) and (Feature is None) and (Table is None):
     # If neither h5py or OpenPaths Python API is available, gracefully disable the function
 
     def read_feat(*args, **kwargs):
-        raise NotImplementedError()
+        raise ImportError("Please install h5py to use this function without the OpenPaths Python API.")
 
 elif (Feature is None) and (Table is None):
     # If OpenPaths Python API is not available, use h5py to read a basic version of the feature file
