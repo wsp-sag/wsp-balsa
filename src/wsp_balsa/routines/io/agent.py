@@ -9,9 +9,10 @@ __all__ = [
     "read_calibration_target_table",
 ]
 
+import warnings
 from json import loads
 from os import PathLike
-from typing import Any, Dict, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import pandas as pd
 
@@ -35,13 +36,17 @@ if (h5py is None) and (Feature is None) and (Table is None):
     # If neither h5py or OpenPaths Python API is available, gracefully disable the function
 
     def read_feat(*args, **kwargs):
-        raise NotImplementedError()
+        raise ImportError("Please install h5py to use this function without the OpenPaths Python API.")
 
 elif (Feature is None) and (Table is None):
     # If OpenPaths Python API is not available, use h5py to read a basic version of the feature file
 
     def read_feat(file: Union[str, PathLike]) -> pd.DataFrame:
         """Reads tabular data stored in a feature file produced by OpenPaths applications. Uses h5py.
+
+        Note:
+            This implementation only supports a subset of the attribute types and properties that may be present in a
+            feature file.
 
         Args:
             file (str | PathLike): The file to read
@@ -51,21 +56,26 @@ elif (Feature is None) and (Table is None):
         """
         retval = []
         with h5py.File(str(file), "r") as f:
-            atts = loads(f["attributes"]["data"][()].decode())
-            for i, att in enumerate(atts):
-                col_name = f"col_{i}"
+            atts: List[Dict[str, Union[str, bool]]] = loads(f["attributes"]["data"][()].decode())
+            col_names = [f"col_{i}" for i in range(len(atts))]
+            for col_name, att in zip(col_names, atts):
+                if att["name"] in {"feature_id", "time_occupancy"}:
+                    continue  # Skip these special attributes that are not relevant outside of AGENT
+                if att["special"] or att["is_time_varying"] or att["is_list"] or att["is_array"]:
+                    warnings.warn(
+                        f"Attribute `{att['name']}` has unsupported properties (special={att['special']}, "
+                        f"is_time_varying={att['is_time_varying']}, is_list={att['is_list']}, is_array={att['is_array']}). "
+                        "Skipping this attribute."
+                    )
+                    continue  # TODO: Implement support for these types of attributes
+
+                v = f["attributes"][col_name][()]
                 if att["dtype"] == "string":
-                    v = loads(f["attributes"][col_name][()].decode())
-                elif att["is_list"]:
-                    continue  # TODO
-                else:
-                    v = f["attributes"][col_name][()]
-                s = pd.Series(v, name=att["name"])
+                    v = loads(v.decode())
+                s = pd.Series(v, name=att["name"], dtype=att["dtype"])
                 retval.append(s)
 
-        retval = pd.concat(retval, axis=1)
-        if "feature_id" in retval:
-            retval.drop("feature_id", axis=1, inplace=True)
+        retval: pd.DataFrame = pd.concat(retval, axis=1)
 
         return retval
 
