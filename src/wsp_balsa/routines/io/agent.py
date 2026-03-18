@@ -55,7 +55,7 @@ elif (Feature is None) and (Table is None):
         """
         retval = []
         with h5py.File(str(file), "r") as f:
-            atts = loads(f["attributes"]["data"][()].decode())
+            atts: List[Dict[str, Union[str, bool]]] = loads(f["attributes"]["data"][()].decode())
             col_names = [f"col_{i}" for i in range(len(atts))]
             for col_name, att in zip(col_names, atts):
                 if att["special"] or att["is_time_varying"] or att["is_list"] or att["is_array"]:
