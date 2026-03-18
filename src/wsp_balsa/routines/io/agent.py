@@ -59,6 +59,8 @@ elif (Feature is None) and (Table is None):
             atts: List[Dict[str, Union[str, bool]]] = loads(f["attributes"]["data"][()].decode())
             col_names = [f"col_{i}" for i in range(len(atts))]
             for col_name, att in zip(col_names, atts):
+                if att["name"] == "feature_id":
+                    continue  # feature_id is not needed
                 if att["special"] or att["is_time_varying"] or att["is_list"] or att["is_array"]:
                     warnings.warn(
                         f"Attribute `{att['name']}` has unsupported properties (special={att['special']}, "
@@ -74,8 +76,6 @@ elif (Feature is None) and (Table is None):
                 retval.append(s)
 
         retval: pd.DataFrame = pd.concat(retval, axis=1)
-        if "feature_id" in retval:
-            retval.drop("feature_id", axis=1, inplace=True)
 
         return retval
 
