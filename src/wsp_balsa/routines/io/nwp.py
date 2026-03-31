@@ -58,7 +58,7 @@ def read_nwp_base_network(
     Args:
         nwp_fp (str | PathLike): File path to the network package.
         text_encoding (str, optional): Defaults to ``"utf-8"``. Text encoding to use when reading the network package.
-            Should correspond to the text encoding used in the Emmebank where the network package was exported from.
+            Should match the text encoding of the Emmebank from which the network package was exported.
 
     Returns:
         Tuple[pd.DataFrame, pd.DataFrame]: A tuple of DataFrames containing the nodes and links
@@ -335,7 +335,7 @@ def read_nwp_transit_network(
         parse_line_id (bool, optional): Defaults to ``False``. Option to parse operator and route IDs from line IDs.
             Please note that transit line IDs must adhere to the TMG NCS16 for this option to work properly.
         text_encoding (str, optional): Defaults to ``"utf-8"``. Text encoding to use when reading the network package.
-            Should correspond to the text encoding used in the Emmebank where the network package was exported from.
+            Should match the text encoding of the Emmebank from which the network package was exported.
 
     Returns:
         Tuple[pd.DataFrame, pd.DataFrame]: A tuple of DataFrames containing the transt lines and segments.
@@ -495,7 +495,7 @@ def read_nwp_transit_segment_results(
     Args:
         nwp_fp (str | PathLike): File path to the network package.
         text_encoding (str, optional): Defaults to ``"utf-8"``. Text encoding to use when reading the network package.
-            Should correspond to the text encoding used in the Emmebank where the network package was exported from.
+            Should match the text encoding of the Emmebank from which the network package was exported.
 
     Returns:
         pd.DataFrame
@@ -540,7 +540,7 @@ def read_nwp_transit_vehicles(
     Args:
         nwp_fp (str | PathLike): File path to the network package.
         text_encoding (str, optional): Defaults to ``"utf-8"``. Text encoding to use when reading the network package.
-            Should correspond to the text encoding used in the Emmebank where the network package was exported from.
+            Should match the text encoding of the Emmebank from which the network package was exported.
 
     Returns:
         pd.DataFrame: DataFrame containing the transit vehicles.
