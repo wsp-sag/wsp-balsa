@@ -49,12 +49,16 @@ def process_emme_eng_notation_series(s: pd.Series, *, to_dtype=float) -> pd.Seri
 
 def read_nwp_base_network(
     nwp_fp: Union[str, PathLike],
+    *,
+    text_encoding: str = "utf-8",
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """A function to read the base network from a Network Package file (exported from Emme using the TMG Toolbox) into
     DataFrames.
 
     Args:
         nwp_fp (str | PathLike): File path to the network package.
+        text_encoding (str, optional): Defaults to ``"utf-8"``. Text encoding to use when reading the network package.
+            Should match the text encoding of the Emmebank from which the network package was exported.
 
     Returns:
         Tuple[pd.DataFrame, pd.DataFrame]: A tuple of DataFrames containing the nodes and links
@@ -66,7 +70,7 @@ def read_nwp_base_network(
     header_nodes, header_links, last_line = None, None, None
     with zipfile.ZipFile(nwp_fp) as zf:
         for i, line in enumerate(zf.open("base.211"), start=1):
-            line = line.strip().decode("utf-8")
+            line = line.strip().decode(text_encoding, errors="strict")
             if line.startswith("c"):
                 continue  # Skip comment lines
             if line.startswith("t nodes"):
@@ -321,6 +325,7 @@ def read_nwp_transit_network(
     nwp_fp: Union[str, PathLike],
     *,
     parse_line_id: bool = False,
+    text_encoding: str = "utf-8",
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """A function to read the transit network from a Network Package file (exported from Emme using the TMG Toolbox)
     into DataFrames.
@@ -329,6 +334,8 @@ def read_nwp_transit_network(
         nwp_fp (str | PathLike): File path to the network package.
         parse_line_id (bool, optional): Defaults to ``False``. Option to parse operator and route IDs from line IDs.
             Please note that transit line IDs must adhere to the TMG NCS16 for this option to work properly.
+        text_encoding (str, optional): Defaults to ``"utf-8"``. Text encoding to use when reading the network package.
+            Should match the text encoding of the Emmebank from which the network package was exported.
 
     Returns:
         Tuple[pd.DataFrame, pd.DataFrame]: A tuple of DataFrames containing the transt lines and segments.
@@ -344,7 +351,7 @@ def read_nwp_transit_network(
     current_tline = None
     with zipfile.ZipFile(nwp_fp) as zf:
         for line in zf.open("transit.221"):
-            line = line.strip().decode("utf-8")
+            line = line.strip().decode(text_encoding, errors="strict")
             if line.startswith("c") or line.startswith("t") or line.startswith("path"):
                 continue  # Skip
             elif line.startswith("a"):
@@ -479,12 +486,16 @@ def read_nwp_transit_station_results(
 
 def read_nwp_transit_segment_results(
     nwp_fp: Union[str, PathLike],
+    *,
+    text_encoding: str = "utf-8",
 ) -> pd.DataFrame:
     """A function to read and summarize the transit segment boardings, alightings, and volumes from a Network Package
     file (exported from Emme using the TMG Toolbox).
 
     Args:
         nwp_fp (str | PathLike): File path to the network package.
+        text_encoding (str, optional): Defaults to ``"utf-8"``. Text encoding to use when reading the network package.
+            Should match the text encoding of the Emmebank from which the network package was exported.
 
     Returns:
         pd.DataFrame
@@ -493,7 +504,7 @@ def read_nwp_transit_segment_results(
     if not nwp_fp.exists():
         raise FileNotFoundError(f"File `{nwp_fp.as_posix()}` not found.")
 
-    _, segments = read_nwp_transit_network(nwp_fp)
+    _, segments = read_nwp_transit_network(nwp_fp, text_encoding=text_encoding)
     segments.set_index(["loop"], append=True, inplace=True)
 
     with zipfile.ZipFile(nwp_fp) as zf:
@@ -520,12 +531,16 @@ def read_nwp_transit_segment_results(
 
 def read_nwp_transit_vehicles(
     nwp_fp: Union[str, PathLike],
+    *,
+    text_encoding: str = "utf-8",
 ) -> pd.DataFrame:
     """A function to read the transit vehicles from a Network Package file (exported from Emme using the TMG Toolbox)
     into DataFrames.
 
     Args:
         nwp_fp (str | PathLike): File path to the network package.
+        text_encoding (str, optional): Defaults to ``"utf-8"``. Text encoding to use when reading the network package.
+            Should match the text encoding of the Emmebank from which the network package was exported.
 
     Returns:
         pd.DataFrame: DataFrame containing the transit vehicles.
@@ -538,7 +553,7 @@ def read_nwp_transit_vehicles(
         # Get header
         header = None
         for i, line in enumerate(zf.open("vehicles.202"), start=1):
-            line = line.strip().decode("utf-8")
+            line = line.strip().decode(text_encoding, errors="strict")
             if line.startswith("c"):
                 continue  # Skip comment lines
             if line.startswith("t vehicles"):
