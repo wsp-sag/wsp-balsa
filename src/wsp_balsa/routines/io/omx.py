@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 __all__ = [
+    "list_omx_attributes",
+    "list_omx_mappings",
+    "list_omx_matrices",
     "read_omx",
     "to_omx",
 ]
@@ -25,6 +28,15 @@ MATRIX_TYPES = Union[pd.DataFrame, pd.Series, NDArray]
 
 if omx is None:
 
+    def list_omx_attributes(*args, **kwargs):
+        raise NotImplementedError()
+
+    def list_omx_mappings(*args, **kwargs):
+        raise NotImplementedError()
+
+    def list_omx_matrices(*args, **kwargs):
+        raise NotImplementedError()
+
     def read_omx(*args, **kwargs):
         raise NotImplementedError()
 
@@ -32,6 +44,51 @@ if omx is None:
         raise NotImplementedError()
 
 else:
+
+    def list_omx_attributes(src_fp: Union[str, PathLike]) -> List[str]:
+        """Lists the attributes contained in an OMX file.
+
+        Args:
+            src_fp (str | PathLike): OMX file from which to read. Cannot be an open file handler.
+
+        Returns:
+            list[str]: The names of the attributes contained in the OMX file.
+        """
+        omx_file = omx.open_file(str(src_fp), mode="r")
+        try:
+            return omx_file.list_all_attributes()
+        finally:
+            omx_file.close()
+
+    def list_omx_mappings(src_fp: Union[str, PathLike]) -> List[str]:
+        """Lists the mappings contained in an OMX file.
+
+        Args:
+            src_fp (str | PathLike): OMX file from which to read. Cannot be an open file handler.
+
+        Returns:
+            list[str]: The names of the mappings contained in the OMX file.
+        """
+        omx_file = omx.open_file(str(src_fp), mode="r")
+        try:
+            return omx_file.list_mappings()
+        finally:
+            omx_file.close()
+
+    def list_omx_matrices(src_fp: Union[str, PathLike]) -> List[str]:
+        """Lists the matrices contained in an OMX file.
+
+        Args:
+            src_fp (str | PathLike): OMX file from which to read. Cannot be an open file handler.
+
+        Returns:
+            list[str]: The names of the matrices contained in the OMX file.
+        """
+        omx_file = omx.open_file(str(src_fp), mode="r")
+        try:
+            return sort_nicely(omx_file.list_matrices())
+        finally:
+            omx_file.close()
 
     def read_omx(
         src_fp: Union[str, PathLike],
@@ -42,8 +99,7 @@ else:
         raw: bool = False,
         squeeze: bool = True,
     ) -> Union[MATRIX_TYPES, Dict[str, MATRIX_TYPES]]:
-        """
-        Reads Open Matrix (OMX) files. An OMX file can contain multiple matrices, so this function
+        """Reads Open Matrix (OMX) files. An OMX file can contain multiple matrices, so this function
         typically returns a Dict.
 
         Args:

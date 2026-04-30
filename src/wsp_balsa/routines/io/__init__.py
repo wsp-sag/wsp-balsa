@@ -28,6 +28,9 @@ __all__ = [
     "read_nwp_transit_segment_results",
     "read_nwp_transit_station_results",
     "read_nwp_transit_vehicles",
+    "list_omx_attributes",
+    "list_omx_mappings",
+    "list_omx_matrices",
     "read_omx",
     "to_omx",
 ]
@@ -57,4 +60,4 @@ from .nwp import (
     read_nwp_transit_station_results,
     read_nwp_transit_vehicles,
 )
-from .omx import read_omx, to_omx
+from .omx import list_omx_attributes, list_omx_mappings, list_omx_matrices, read_omx, to_omx
