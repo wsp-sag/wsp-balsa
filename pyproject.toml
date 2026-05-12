@@ -37,13 +37,11 @@ tables = [
 
 [dependency-groups]
 dev = [
-    "build>=1.1.1",
     "ipykernel>=6.16.2",
     "pydata-sphinx-theme>=0.13.3",
     "pytest>=7.4.4",
     "sphinx>=5.3.0",
     "sphinx-favicon>=1.0.1",
-    "twine>=4.0.2",
 ]
 
 [project.urls]
