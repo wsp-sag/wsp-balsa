@@ -3,21 +3,22 @@ from __future__ import annotations
 __all__ = [
     "LogFormats",
     "ModelLogger",
-    "init_root",
     "get_model_logger",
+    "init_root",
     "log_to_file",
 ]
 
 import logging
 import sys
 import traceback as tb
+from collections.abc import Generator
 from contextlib import contextmanager
 from enum import Enum
 from json import dumps as json_to_str
 from json import loads as parse_json
 from logging import FileHandler, Formatter, Logger, LogRecord
 from os import PathLike
-from typing import Any, Dict, Generator, Union
+from typing import Any
 
 try:
     from inro.modeller import logbook_write
@@ -54,7 +55,7 @@ class LogFormats(Enum):
 # region Filter Classes
 
 
-class _RangeFilter(object):
+class _RangeFilter:
     def __init__(self, low: int, high: int):
         self._low = int(low)
         self._high = int(high)
@@ -70,10 +71,10 @@ class _RangeFilter(object):
 
 
 class _SwitchFormatter(Formatter):
-    def __init__(self, default_format: Union[Formatter, str], level_formats: Dict[int, Union[Formatter, str]]):
-        super(_SwitchFormatter, self).__init__()
+    def __init__(self, default_format: Formatter | str, level_formats: dict[int, Formatter | str]):
+        super().__init__()
 
-        def make_formatter(item: Union[Formatter, str]) -> Formatter:
+        def make_formatter(item: Formatter | str) -> Formatter:
             return Formatter(item) if isinstance(item, str) else item
 
         self._default = make_formatter(default_format)
@@ -100,7 +101,7 @@ class _JsonFormatter(Formatter):
 class ModelLogger(Logger):
     def __init__(self, name: str, level: int = logging.NOTSET):
         """ModelLogger extends the standard Python Logger, adding additional statements such as ``.report()``."""
-        super(ModelLogger, self).__init__(name, level)
+        super().__init__(name, level)
         self._all_load_failures = []
 
     def report(self, msg, *args, **kwargs):
@@ -122,7 +123,7 @@ class ModelLogger(Logger):
         self.log(_SUBPROC_ERR_LEVEL, msg, *args, **kwargs)
 
     def log_json(self, json_string: str):
-        json_dict: Dict[str, Any] = parse_json(json_string)
+        json_dict: dict[str, Any] = parse_json(json_string)
         record = logging.makeLogRecord(json_dict)
         self.handle(record)
 
@@ -142,7 +143,7 @@ class ModelLogger(Logger):
 
 def _prep_fancy_formatter():
     raw_fmt = _FMT_STRING.format(arrow=_UNC_ARROW)
-    fmt_string = str("".join(["\x1b[{colour}m", raw_fmt, "\x1b[0m"]))
+    fmt_string = str("".join(["\x1b[{colour}m", raw_fmt, "\x1b[0m"]))  # noqa: FLY002
 
     debug_formatter = logging.Formatter(fmt_string.format(colour=37))  # Grey colour
     subproc_formatter = logging.Formatter(fmt_string.format(colour=37))  # Grey colour
@@ -178,7 +179,7 @@ def _prep_fancy_formatter():
 def init_root(
     name: str,
     *,
-    stream_format: Union[str, LogFormats] = LogFormats.FANCY,
+    stream_format: str | LogFormats = LogFormats.FANCY,
     log_debug: bool = True,
 ) -> ModelLogger:
     """Initialize a ModelLogger
@@ -229,7 +230,7 @@ def get_model_logger(name: str) -> ModelLogger:
 
 @contextmanager
 def log_to_file(
-    file_name: Union[str, PathLike],
+    file_name: str | PathLike,
     name: str,
     *,
     append: bool = False,

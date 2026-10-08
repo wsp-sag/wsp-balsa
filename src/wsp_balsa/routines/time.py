@@ -5,7 +5,6 @@ __all__ = [
 ]
 
 from datetime import datetime, timedelta
-from typing import Dict
 
 
 def generate_time_bin_labels(
@@ -13,8 +12,8 @@ def generate_time_bin_labels(
     day_end_minute: int,
     *,
     time_resolution_minute: int = 30,
-    base_dt: datetime = None,
-) -> Dict[int, datetime]:
+    base_dt: datetime | None = None,
+) -> dict[int, datetime]:
     """Generate time bin labels based on start time, end time, and time resolution.
 
     Args:

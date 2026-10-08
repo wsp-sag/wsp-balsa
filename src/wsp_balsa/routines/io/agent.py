@@ -1,18 +1,18 @@
 from __future__ import annotations
 
 __all__ = [
+    "read_calibration_target_table",
+    "read_choice_model_calibration_automata_table",
+    "read_choice_model_component_tables",
     "read_feat",
     "read_table_calculator_result_attributes",
-    "read_choice_model_component_tables",
-    "read_choice_model_calibration_automata_table",
     "read_utility_expression_table",
-    "read_calibration_target_table",
 ]
 
 import warnings
 from json import loads
 from os import PathLike
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any
 
 import pandas as pd
 
@@ -41,7 +41,7 @@ if (h5py is None) and (Feature is None) and (Table is None):
 elif (Feature is None) and (Table is None):
     # If OpenPaths Python API is not available, use h5py to read a basic version of the feature file
 
-    def read_feat(file: Union[str, PathLike]) -> pd.DataFrame:
+    def read_feat(file: str | PathLike) -> pd.DataFrame:
         """Reads tabular data stored in a feature file produced by OpenPaths applications. Uses h5py.
 
         Note:
@@ -56,7 +56,7 @@ elif (Feature is None) and (Table is None):
         """
         retval = []
         with h5py.File(str(file), "r") as f:
-            atts: List[Dict[str, Union[str, bool]]] = loads(f["attributes"]["data"][()].decode())
+            atts: list[dict[str, str | bool]] = loads(f["attributes"]["data"][()].decode())
             col_names = [f"col_{i}" for i in range(len(atts))]
             for col_name, att in zip(col_names, atts):
                 if att["name"] in {"feature_id", "time_occupancy"}:
@@ -82,7 +82,7 @@ elif (Feature is None) and (Table is None):
 else:
     # If OpenPaths Python API is available, use it to read a full-featured version of the feature file
 
-    def read_feat(file: Union[str, PathLike]) -> pd.DataFrame:
+    def read_feat(file: str | PathLike) -> pd.DataFrame:
         """Reads tabular data stored in a feature file produced by OpenPaths applications. Uses the EMME Python API.
 
         Args:
@@ -99,11 +99,11 @@ else:
 # region Model Package
 
 
-def _parse_version(ver_str: str) -> Tuple[int, int, int]:
+def _parse_version(ver_str: str) -> tuple[int, int, int]:
     return tuple([int(v) for v in ver_str.split(".")])
 
 
-def read_calibration_target_table(model_package_dict: Dict[str, Any]) -> pd.DataFrame:
+def read_calibration_target_table(model_package_dict: dict[str, Any]) -> pd.DataFrame:
     """Reads the calibration target table from an AGENT model package specification
 
     Args:
@@ -129,7 +129,7 @@ def read_calibration_target_table(model_package_dict: Dict[str, Any]) -> pd.Data
     return df.set_index("name")
 
 
-def read_choice_model_component_tables(model_step_dict: Dict[str, Any]) -> pd.DataFrame:
+def read_choice_model_component_tables(model_step_dict: dict[str, Any]) -> pd.DataFrame:
     """Reads the choice components from an AGENT choice model step
 
     Args:
@@ -151,7 +151,7 @@ def read_choice_model_component_tables(model_step_dict: Dict[str, Any]) -> pd.Da
     return choice_components
 
 
-def read_choice_model_calibration_automata_table(model_step_dict: Dict[str, Any]) -> pd.DataFrame:
+def read_choice_model_calibration_automata_table(model_step_dict: dict[str, Any]) -> pd.DataFrame:
     """Reads the calibration instructions table from an AGENT choice model step
 
     Args:
@@ -173,7 +173,7 @@ def read_choice_model_calibration_automata_table(model_step_dict: Dict[str, Any]
     return df
 
 
-def read_table_calculator_result_attributes(model_step_dict: Dict[str, Any]) -> pd.DataFrame:
+def read_table_calculator_result_attributes(model_step_dict: dict[str, Any]) -> pd.DataFrame:
     """Reads the result attributes from an AGENT table calculator model step
 
     Args:

@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 __all__ = [
-    "best_intermediate_zones",
     "best_intermediate_subset_zones",
+    "best_intermediate_zones",
 ]
 
 from multiprocessing import cpu_count
 from threading import Thread
-from typing import Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -28,7 +27,7 @@ _NULL_INDEX = -1
 _NEG_INF = -np.inf
 
 
-def _get_breaks(n_items: int, n_workers: int) -> List[Tuple[int, int]]:
+def _get_breaks(n_items: int, n_workers: int) -> list[tuple[int, int]]:
     """Gets starts and stops for breaks similar to numpy.array_slice()"""
     div, remainder = divmod(n_items, n_workers)
     slices = []
@@ -74,7 +73,7 @@ def _nbf_twopart_worker(
     n: int,
 ):
     """Performance-tuned Numba function to operate on its own thread"""
-    n_origins, n_intermediate = pk_costs.shape
+    _, n_intermediate = pk_costs.shape
     n_destinations = kq_costs.shape[1]
 
     # Allocate the sorted heap of costs (and associated indices) once per thread
@@ -124,7 +123,7 @@ def _nbf_twopart_subset_worker(
     n_final: int,
 ):
     """Performance-tuned Numba function to operate on its own thread"""
-    n_origins, n_intermediate = pk_costs.shape
+    _, n_intermediate = pk_costs.shape
     n_destinations = kq_costs.shape[1]
 
     # Allocate the sorted heap of utilities (and associated indices) once per thread
@@ -181,7 +180,7 @@ def _nbf_twopart_subset_worker(
         result_indices[p, q, :] = zone_heap
 
 
-def _validate_pk_kq_tables(pk_table: pd.DataFrame, kq_table: pd.DataFrame) -> Tuple[pd.Index, pd.Index, pd.Index]:
+def _validate_pk_kq_tables(pk_table: pd.DataFrame, kq_table: pd.DataFrame) -> tuple[pd.Index, pd.Index, pd.Index]:
     if pk_table.index.nlevels != 2:
         raise RuntimeError("pk table index must have two levels")
     if kq_table.index.nlevels != 2:
@@ -214,7 +213,7 @@ def best_intermediate_zones(
     availability_name: str = "available",
     n_threads: int = 1,
     squeeze: bool = True,
-) -> Union[pd.DataFrame, Dict[int, pd.DataFrame]]:
+) -> pd.DataFrame | dict[int, pd.DataFrame]:
     """Numba-accelerated.
 
     Triple-index operation for two matrices, finding the most- or least-cost intermediate zones. Takes a first leg
@@ -353,7 +352,7 @@ def best_intermediate_subset_zones(
     availability_name: str = "available",
     n_threads: int = 1,
     squeeze: bool = True,
-) -> Union[pd.DataFrame, Dict[int, pd.DataFrame]]:
+) -> pd.DataFrame | dict[int, pd.DataFrame]:
     """Numba-accelerated.
 
     Triple-index operation for two matrices, finding the most- or least-cost intermediate zones from a subset.
@@ -502,7 +501,7 @@ def best_intermediate_subset_zones(
 
 def _reshape_series(
     series: pd.Series, n_rows: int, n_cols: int, row_indexer: NDArray, col_indexer: NDArray
-) -> Union[NDArray, pd.Categorical]:
+) -> NDArray | pd.Categorical:
     if isinstance(series, pd.CategoricalDtype):
         codes = series.cat.codes
         reshaped = codes.to_numpy().reshape([n_rows, n_cols])
@@ -529,7 +528,7 @@ def _combine_tables(
     other_columns: bool = True,
     squeeze: bool = True,
     null_index: int = 0,
-) -> Union[pd.DataFrame, Dict[int, pd.DataFrame]]:
+) -> pd.DataFrame | dict[int, pd.DataFrame]:
     n_origins, n_intermediate, n_destinations = len(origin_zones), len(intermediate_zones), len(destination_zones)
     n_selected: int = result_indices.shape[2]
 

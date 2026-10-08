@@ -6,7 +6,7 @@ __all__ = [
     "tlfd",
 ]
 
-from typing import Any, Dict, Tuple, Union
+from typing import Any
 
 import numexpr as ne
 import numpy as np
@@ -123,18 +123,14 @@ def _get_distance_equation(method: str) -> str:
         y1 = "(y1 * pi / 180)"
         delta_lon = "((x1 - x0) * pi / 180)"
         delta_lat = "((y1 - y0) * pi / 180)"
-        part1 = "sin({delta_lat} / 2.0)**2 + cos({y0}) * cos({y1}) * (sin({delta_lon} / 2.0))**2".format(
-            delta_lat=delta_lat, delta_lon=delta_lon, y0=y0, y1=y1
-        )
-        expr = "6371.0 * earth_radius_factor* 2.0 * arctan2(sqrt({part1}), sqrt(1.0 - {part1})) * coord_unit".format(
-            part1=part1
-        )
+        part1 = f"sin({delta_lat} / 2.0)**2 + cos({y0}) * cos({y1}) * (sin({delta_lon} / 2.0))**2"
+        expr = f"6371.0 * earth_radius_factor* 2.0 * arctan2(sqrt({part1}), sqrt(1.0 - {part1})) * coord_unit"
     else:
         raise NotImplementedError(method.lower())
     return expr
 
 
-def _prepare_distance_kwargs(kwargs: Dict[str, Any]):
+def _prepare_distance_kwargs(kwargs: dict[str, Any]):
     defaults = {"coord_unit": 1.0, "earth_radius_factor": 1.0, "pi": np.pi}
     for key, val in defaults.items():
         if key not in kwargs:
@@ -157,10 +153,10 @@ def _check_vectors(description: str, *vectors):
 
     for vector in vectors[1:]:
         if isinstance(vector, pd.Series):
-            assert vector.index.equals(common_index), "All %s Series must have the same index" % description
+            assert vector.index.equals(common_index), f"All {description} Series must have the same index"
             retval.append(vector.values[...])
         else:
-            assert len(vector) == common_length, "All %s vectors must have the same length" % description
+            assert len(vector) == common_length, f"All {description} vectors must have the same length"
             retval.append(vector[...])
 
     return common_index, retval
@@ -177,7 +173,7 @@ def distance_matrix(
     labels1: ArrayLike = None,
     method: str = "EUCLIDEAN",
     **kwargs,
-) -> Union[pd.Series, pd.DataFrame, NDArray]:
+) -> pd.Series | pd.DataFrame | NDArray:
     """Fastest method of computing a distance matrix from vectors of coordinates, using the NumExpr package. Supports
     several equations for computing distances.
 
@@ -283,7 +279,7 @@ def distance_array(
     *,
     method: str = "euclidean",
     **kwargs,
-) -> Union[NDArray, pd.Series]:
+) -> NDArray | pd.Series:
     """
     Fast method to compute distance between 2 (x, y) points, represented by 4 separate arrays, using the NumExpr
     package. Supports several equations for computing distances
@@ -337,7 +333,7 @@ def indexers_for_map_matrix(
     col_labels: pd.Index,
     superset: pd.Index,
     check: bool = True,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     if check:
         assert np.all(row_labels.isin(superset))
         assert np.all(col_labels.isin(superset))
@@ -352,9 +348,9 @@ def map_to_matrix(
     values: pd.Series,
     super_labels: pd.Index,
     fill_value: float = 0,
-    row_col_labels: Tuple[pd.Series, pd.Series] = None,
-    row_col_offsets: Tuple[NDArray, NDArray] = None,
-    out: Union[pd.DataFrame, NDArray] = None,
+    row_col_labels: tuple[pd.Series, pd.Series] | None = None,
+    row_col_offsets: tuple[NDArray, NDArray] | None = None,
+    out: pd.DataFrame | NDArray | None = None,
     grouper_func: str = "sum",
     out_operand: str = "+",
 ) -> pd.DataFrame:
@@ -402,7 +398,7 @@ def map_to_matrix(
         out_name = "__OUT__"
         other_name = "__OTHER__"
         ld = {out_name: out[xs, ys], other_name: aggregated.values}
-        ne.evaluate("{0} = {0} {1} {2}".format(out_name, out_operand, other_name), local_dict=ld)
+        ne.evaluate(f"{out_name} = {out_name} {out_operand} {other_name}", local_dict=ld)
 
     out = pd.DataFrame(out, index=super_labels, columns=super_labels)
     return out
