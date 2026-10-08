@@ -189,12 +189,14 @@ def read_table_calculator_result_attributes(model_step_dict: dict[str, Any]) -> 
     return df
 
 
-def read_utility_expression_table(choice_component_dict: dict) -> pd.DataFrame:
+def read_utility_expression_table(choice_component_dict: dict, *, add_component_index: bool = False) -> pd.DataFrame:
     """Reads the utility expression table from an AGENT model step choice component
 
     Args:
         choice_component_dict (dict): The choice component of a model step in an AGENT model package spec, as a
             dictionary
+        add_component_index (bool, optional): Defaults to ``False``. Whether to add a component index column to the
+            resulting DataFrame.
 
     Returns:
         pd.DataFrame
@@ -229,6 +231,8 @@ def read_utility_expression_table(choice_component_dict: dict) -> pd.DataFrame:
                 "coefficient",
             ]
         ].copy()
+        if not add_component_index:
+            df.drop("component_index", axis=1, inplace=True)
 
     return df
 
