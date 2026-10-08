@@ -11,8 +11,8 @@ __all__ = [
     "split_zone_in_matrix",
 ]
 
+from collections.abc import Callable, Iterable
 from multiprocessing import cpu_count
-from typing import Callable, Iterable, List, Tuple, Union
 from warnings import warn
 
 import numexpr as ne
@@ -54,13 +54,13 @@ def matrix_balancing_1d(
     assert axis in [0, 1], "axis must be either 0 or 1"
     assert m.ndim == 2, "`m` must be a two-dimensional matrix"
     assert a.ndim == 1, "`a` must be an one-dimensional vector"
-    assert np.all(m.shape[axis] == a.shape[0]), "axis %d of matrices 'm' and 'a' must be the same." % axis
+    assert np.all(m.shape[axis] == a.shape[0]), f"axis {axis} of matrices 'm' and 'a' must be the same."
 
     return _balance(m, a, axis)
 
 
 def matrix_balancing_2d(
-    m: Union[NDArray, pd.DataFrame],
+    m: NDArray | pd.DataFrame,
     a: NDArray,
     b: NDArray,
     *,
@@ -68,7 +68,7 @@ def matrix_balancing_2d(
     max_iterations: int = 1000,
     rel_error: float = 0.0001,
     n_threads: int = 1,
-) -> Tuple[Union[NDArray, pd.DataFrame], float, int]:
+) -> tuple[NDArray | pd.DataFrame, float, int]:
     """Balances a two-dimensional matrix using iterative proportional fitting.
 
     Args:
@@ -100,9 +100,9 @@ def matrix_balancing_2d(
         m_pd = m
         m = m_pd.values
 
-    if isinstance(a, pd.Series) or isinstance(a, pd.DataFrame):
+    if isinstance(a, (pd.Series, pd.DataFrame)):
         a = a.values
-    if isinstance(b, pd.Series) or isinstance(b, pd.DataFrame):
+    if isinstance(b, (pd.Series, pd.DataFrame)):
         b = b.values
 
     # ##################################################################################
@@ -121,11 +121,11 @@ def matrix_balancing_2d(
     assert b.ndim == 1 and b.shape[0] == m.shape[0], (
         "'a' must be a one-dimensional array, whose size matches that of 'm'"
     )
-    assert totals_to_use in valid_totals_to_use, "totals_to_use must be one of %s" % valid_totals_to_use
+    assert totals_to_use in valid_totals_to_use, f"totals_to_use must be one of {valid_totals_to_use}"
     assert max_iterations >= 1, "max_iterations must be integer >= 1"
     assert 0 < rel_error < 1.0, "rel_error must be float between 0.0 and 1.0"
     assert 1 <= n_threads <= cpu_count(), (
-        "n_threads must be integer between 1 and the number of processors (%d) " % cpu_count()
+        f"n_threads must be integer between 1 and the number of processors ({cpu_count()}) "
     )
     if n_threads > 1:
         raise NotImplementedError("Multiprocessing capability is not implemented yet.")
@@ -204,10 +204,10 @@ def _nbf_bucket_round(a_, decimals=0):
 
 
 def matrix_bucket_rounding(
-    m: Union[NDArray, pd.DataFrame],
+    m: NDArray | pd.DataFrame,
     *,
     decimals: int = 0,
-) -> Union[NDArray, pd.DataFrame]:
+) -> NDArray | pd.DataFrame:
     """Bucket rounds to the given number of decimals.
 
     Args:
@@ -245,8 +245,8 @@ def matrix_bucket_rounding(
 def split_zone_in_matrix(
     base_matrix: pd.DataFrame,
     old_zone: int,
-    new_zones: List[int],
-    proportions: List[float],
+    new_zones: list[int],
+    proportions: list[float],
 ) -> pd.DataFrame:
     """Takes a zone in a matrix (as a DataFrame) and splits it into several new zones, prorating affected cells by a
     vector of proportions (one value for each new zone). The old zone is removed.
@@ -319,13 +319,13 @@ def split_zone_in_matrix(
 
 
 def aggregate_matrix(
-    matrix: Union[pd.DataFrame, pd.Series],
+    matrix: pd.DataFrame | pd.Series,
     *,
-    groups: Union[pd.Series, NDArray] = None,
-    row_groups: Union[pd.Series, NDArray] = None,
-    col_groups: Union[pd.Series, NDArray] = None,
-    aggfunc: Callable[[Iterable[Union[int, float]]], Union[int, float]] = np.sum,
-) -> Union[pd.DataFrame, pd.Series]:
+    groups: pd.Series | NDArray = None,
+    row_groups: pd.Series | NDArray = None,
+    col_groups: pd.Series | NDArray = None,
+    aggfunc: Callable[[Iterable[int | float]], int | float] = np.sum,
+) -> pd.DataFrame | pd.Series:
     """Aggregates a matrix based on mappings provided for each axis, using a specified aggregation function.
 
     Args:
@@ -661,7 +661,7 @@ def disaggregate_matrix(
     # Get raw indexers for NumPy & lookup the value in each parent cell
     row_indexer = matrix.index.get_indexer(row_mapping)[:, np.newaxis]
     col_indexer = matrix.columns.get_indexer(col_mapping)[np.newaxis, :]
-    parent_cells = matrix.values[row_indexer, col_indexer]
+    parent_cells = matrix.values[row_indexer, col_indexer]  # noqa: F841
 
     # Convert proportions to 2D vectors
     row_proportions = row_proportions[:, np.newaxis]

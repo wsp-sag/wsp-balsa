@@ -6,8 +6,8 @@ __all__ = [
     "trumpet_diagram",
 ]
 
+from collections.abc import Callable
 from os import PathLike
-from typing import Callable, Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -23,11 +23,11 @@ def convergence_boxplot(
     *,
     adjust_target: bool = True,
     percentage: bool = True,
-    band: Tuple[float, float] = None,
+    band: tuple[float, float] | None = None,
     simple_labels: bool = True,
-    ax: Axes = None,
-    fp: Union[str, PathLike] = None,
-    title: str = None,
+    ax: Axes | None = None,
+    fp: str | PathLike | None = None,
+    title: str | None = None,
 ) -> Axes:
     """Measures convergence of constrained location-choice models (such as work-location choice). Can be used to
     produce multiple box plots for different sub-sets of zones, usually based on size.
@@ -81,7 +81,7 @@ def convergence_boxplot(
 
     if not simple_labels:
         columns = [
-            "{}\n{} workers\n{} jobs\n{} zones".format(c, model_sums[i], int(target_sums[i]), filters[i].sum())
+            f"{c}\n{model_sums[i]} workers\n{int(target_sums[i])} jobs\n{filters[i].sum()} zones"
             for i, c in enumerate(columns)
         ]
     unlabelled_zones = pd.DataFrame(unlabelled_zones, columns=columns)
@@ -91,7 +91,7 @@ def convergence_boxplot(
         ax.axhline(0)
 
         if percentage:
-            ax.yaxis.set_major_formatter(FuncFormatter(lambda x, pos: "{}%".format(np.round(x, 2) * 100)))
+            ax.yaxis.set_major_formatter(FuncFormatter(lambda x, pos: f"{np.round(x, 2) * 100}%"))
             ax.set_ylabel("Relative error ((Model - Target) / Target)")
         else:
             ax.set_ylabel("Error (Model - Target)")
@@ -121,7 +121,7 @@ def location_summary(
     ensemble_names: pd.Series,
     *,
     title: str = "",
-    fp: Union[str, PathLike] = None,
+    fp: str | PathLike | None = None,
     dpi: int = 150,
     district_name: str = "Ensemble",
 ) -> Axes:
@@ -199,13 +199,13 @@ def trumpet_diagram(
     counts: pd.Series,
     model_volume: pd.Series,
     *,
-    categories: Union[pd.Series, List[pd.Series]] = None,
-    category_colours: Dict[Union[str, tuple], str] = None,
-    category_markers: Dict[Union[str, tuple], str] = None,
-    label_format: str = None,
+    categories: pd.Series | list[pd.Series] | None = None,
+    category_colours: dict[str | tuple, str] | None = None,
+    category_markers: dict[str | tuple, str] | None = None,
+    label_format: str | None = None,
     title: str = "",
-    y_bounds: Tuple[float, float] = (-2, 2),
-    ax: Axes = None,
+    y_bounds: tuple[float, float] = (-2, 2),
+    ax: Axes | None = None,
     x_label: str = "Count volume",
     legend: bool = True,
     **kwargs,
@@ -272,8 +272,8 @@ def trumpet_diagram(
     if n_categories > 1:
         for category_key, subset in df.groupby(categories):
             current_label = label_format % category_key
-            current_color = category_colours[category_key] if category_key in category_colours else None
-            current_marker = category_markers[category_key] if category_key in category_markers else None
+            current_color = category_colours.get(category_key)
+            current_marker = category_markers.get(category_key)
 
             ax = subset.plot.scatter(
                 x="Count Volume",

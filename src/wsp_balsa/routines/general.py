@@ -11,7 +11,6 @@ __all__ = [
 import re
 from collections.abc import Sequence
 from keyword import kwlist
-from typing import Dict, List, Union
 
 from pandas import DataFrame, Index, MultiIndex, Series
 
@@ -20,9 +19,9 @@ def reindex_series(
     series: Series,
     target_series: Series,
     *,
-    source_levels: List[int] = None,
-    target_levels: List[int] = None,
-    fill_value: Union[int, float] = None,
+    source_levels: list[int] | None = None,
+    target_levels: list[int] | None = None,
+    fill_value: float | None = None,
 ) -> Series:
     # Make shallow copies of the source and target series in case their indexes need to be changed
     series = series.copy(deep=False)
@@ -43,7 +42,7 @@ def reindex_series(
 
 
 def align_categories(
-    items: Sequence[Union[Series, DataFrame]],
+    items: Sequence[Series | DataFrame],
 ):
     """Pre-processing step for ``pd.concat()`` which attempts to align any Categorical series in the sequence to using
     the same set of categories. It passes through the sequence twice: once to accumulate the complete set of all
@@ -91,7 +90,7 @@ def _align_series_categories(series_list: Sequence[Series]):
         series.cat.reorder_categories(sorted_categories, inplace=True)
 
 
-def _enumerate_frame_categories(frames: Sequence[DataFrame]) -> Dict[str, set]:
+def _enumerate_frame_categories(frames: Sequence[DataFrame]) -> dict[str, set]:
     column_categories = {}
     for frame in frames:
         for col_name, series in frame.items():
@@ -106,7 +105,7 @@ def _enumerate_frame_categories(frames: Sequence[DataFrame]) -> Dict[str, set]:
     return column_categories
 
 
-def _align_frame_categories(frames: Sequence[DataFrame], column_categories: Dict[str, set]):
+def _align_frame_categories(frames: Sequence[DataFrame], column_categories: dict[str, set]):
     for col_name, all_categories in column_categories.items():
         sorted_categories = sorted(all_categories)
         for frame in frames:
@@ -122,7 +121,7 @@ def _align_frame_categories(frames: Sequence[DataFrame], column_categories: Dict
 def sum_df_sequence(
     items: Sequence[DataFrame],
     *,
-    fill_value: Union[int, float] = 0,
+    fill_value: float = 0,
 ) -> DataFrame:
     """Sums over a sequence of DataFrames, even if they have different indexes or columns, filling in 0 (or a value of
     your choice) for missing rows or columns. Useful when you have a sequence of DataFrames which are supposed to have
@@ -178,8 +177,8 @@ def _alphanum_key(s):
 
 
 def sort_nicely(
-    l: List[str],
-) -> List[str]:
+    l: list[str],
+) -> list[str]:
     """Sort the given list of strings in the way that humans expect.
 
     Args:

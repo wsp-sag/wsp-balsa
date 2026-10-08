@@ -6,9 +6,9 @@ __all__ = [
     "to_fortran",
 ]
 
+from collections.abc import Iterable
 from io import FileIO
 from pathlib import Path
-from typing import Iterable, Union
 
 import numpy as np
 import pandas as pd
@@ -26,14 +26,14 @@ def _infer_fortran_zones(n_words):
 
 
 def read_fortran_rectangle(
-    file: Union[str, FileIO, Path],
+    file: str | FileIO | Path,
     n_columns: int,
     *,
-    zones: Union[int, Iterable[int], pd.Index] = None,
+    zones: int | Iterable[int] | pd.Index | None = None,
     tall: bool = False,
     reindex_rows: bool = False,
-    fill_value: Union[int, float] = None,
-) -> Union[NDArray, pd.DataFrame, pd.Series]:
+    fill_value: float | None = None,
+) -> NDArray | pd.DataFrame | pd.Series:
     """Reads a FORTRAN-friendly .bin file (a.k.a. 'simple binary format') which is known to NOT be square. Also works
     with square matrices.
 
@@ -99,11 +99,11 @@ def read_fortran_rectangle(
 
 
 def read_fortran_square(
-    file: Union[str, FileIO, Path],
+    file: str | FileIO | Path,
     *,
-    zones: Union[int, Iterable[int], pd.Index] = None,
+    zones: int | Iterable[int] | pd.Index | None = None,
     tall: bool = False,
-) -> Union[NDArray, pd.DataFrame, pd.Series]:
+) -> NDArray | pd.DataFrame | pd.Series:
     """Reads a FORTRAN-friendly .bin file (a.k.a. 'simple binary format') which is known to be square.
 
     This file format is an array of 4-bytes, where each row is prefaced by an integer referring to the 1-based
@@ -157,10 +157,10 @@ def read_fortran_square(
 
 
 def to_fortran(
-    matrix: Union[NDArray, pd.DataFrame, pd.Series],
-    file: Union[str, FileIO, Path],
+    matrix: NDArray | pd.DataFrame | pd.Series,
+    file: str | FileIO | Path,
     *,
-    n_columns: int = None,
+    n_columns: int | None = None,
     min_index: int = 1,
     force_square: bool = True,
 ) -> None:

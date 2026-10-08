@@ -17,9 +17,9 @@ __all__ = [
 
 import re
 import zipfile
+from collections.abc import Hashable
 from os import PathLike
 from pathlib import Path
-from typing import Hashable, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -28,7 +28,7 @@ from pandas.api.types import is_string_dtype
 EMME_ENG_UNITS = {"p": 1e-12, "n": 1e-9, "u": 1e-6, "m": 0.001, "k": 1000.0, "M": 1e6, "G": 1e9, "T": 1e12}
 
 
-def parse_tmg_ncs_line_id(s: pd.Series) -> Tuple[pd.Series, pd.Series]:
+def parse_tmg_ncs_line_id(s: pd.Series) -> tuple[pd.Series, pd.Series]:
     """A function to parse line IDs based on TMG Network Coding Standard conventions. Returns pandas Series objects
     corresponding to the parsed operator and route IDs"""
     operator = s.str[:2].str.replace(r"\d+", "", regex=True)
@@ -48,10 +48,10 @@ def process_emme_eng_notation_series(s: pd.Series, *, to_dtype=float) -> pd.Seri
 
 
 def read_nwp_base_network(
-    nwp_fp: Union[str, PathLike],
+    nwp_fp: str | PathLike,
     *,
     text_encoding: str = "utf-8",
-) -> Tuple[pd.DataFrame, pd.DataFrame]:
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     """A function to read the base network from a Network Package file (exported from Emme using the TMG Toolbox) into
     DataFrames.
 
@@ -141,7 +141,7 @@ def read_nwp_base_network(
 
 
 def read_nwp_exatts_list(
-    nwp_fp: Union[str, PathLike],
+    nwp_fp: str | PathLike,
     **kwargs,
 ) -> pd.DataFrame:
     """A function to read the extra attributes present in a Network Package file (exported from Emme using the TMG
@@ -171,10 +171,10 @@ def read_nwp_exatts_list(
 
 
 def _base_read_nwp_att_data(
-    nwp_fp: Union[str, PathLike],
+    nwp_fp: str | PathLike,
     att_type: str,
-    index_col: Union[str, List[str]],
-    attributes: Union[str, List[str]] = None,
+    index_col: str | list[str],
+    attributes: str | list[str] | None = None,
     **kwargs,
 ) -> pd.DataFrame:
     nwp_fp = Path(nwp_fp)
@@ -207,9 +207,9 @@ def _base_read_nwp_att_data(
 
 
 def read_nwp_node_attributes(
-    nwp_fp: Union[str, PathLike],
+    nwp_fp: str | PathLike,
     *,
-    attributes: Union[str, List[str]] = None,
+    attributes: str | list[str] | None = None,
     **kwargs,
 ) -> pd.DataFrame:
     """A function to read node attributes from a Network Package file (exported from Emme using the TMG Toolbox).
@@ -227,9 +227,9 @@ def read_nwp_node_attributes(
 
 
 def read_nwp_link_attributes(
-    nwp_fp: Union[str, PathLike],
+    nwp_fp: str | PathLike,
     *,
-    attributes: Union[str, List[str]] = None,
+    attributes: str | list[str] | None = None,
     **kwargs,
 ) -> pd.DataFrame:
     """A function to read link attributes from a Network Package file (exported from Emme using the TMG Toolbox).
@@ -247,9 +247,9 @@ def read_nwp_link_attributes(
 
 
 def read_nwp_transit_line_attributes(
-    nwp_fp: Union[str, PathLike],
+    nwp_fp: str | PathLike,
     *,
-    attributes: Union[str, List[str]] = None,
+    attributes: str | list[str] | None = None,
     **kwargs,
 ) -> pd.DataFrame:
     """A function to read transit line attributes from a Network Package file (exported from Emme using the TMG
@@ -268,7 +268,7 @@ def read_nwp_transit_line_attributes(
 
 
 def read_nwp_traffic_results(
-    nwp_fp: Union[str, PathLike],
+    nwp_fp: str | PathLike,
 ) -> pd.DataFrame:
     """A function to read the traffic assignment results from a Network Package file (exported from Emme using the TMG
     Toolbox).
@@ -291,7 +291,7 @@ def read_nwp_traffic_results(
 
 
 def read_nwp_traffic_results_at_countpost(
-    nwp_fp: Union[str, PathLike],
+    nwp_fp: str | PathLike,
     countpost_att: str,
 ) -> pd.DataFrame:
     """A function to read the traffic assignment results at countposts from a Network Package file (exported from Emme
@@ -322,11 +322,11 @@ def read_nwp_traffic_results_at_countpost(
 
 
 def read_nwp_transit_network(
-    nwp_fp: Union[str, PathLike],
+    nwp_fp: str | PathLike,
     *,
     parse_line_id: bool = False,
     text_encoding: str = "utf-8",
-) -> Tuple[pd.DataFrame, pd.DataFrame]:
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     """A function to read the transit network from a Network Package file (exported from Emme using the TMG Toolbox)
     into DataFrames.
 
@@ -352,7 +352,7 @@ def read_nwp_transit_network(
     with zipfile.ZipFile(nwp_fp) as zf:
         for line in zf.open("transit.221"):
             line = line.strip().decode(text_encoding, errors="strict")
-            if line.startswith("c") or line.startswith("t") or line.startswith("path"):
+            if line.startswith(("c", "t", "path")):
                 continue  # Skip
             elif line.startswith("a"):
                 parts = re.sub(r"\s+", " ", line.replace("'", " ")).split(" ")
@@ -406,7 +406,7 @@ def read_nwp_transit_network(
 
 
 def read_nwp_transit_result_summary(
-    nwp_fp: Union[str, PathLike],
+    nwp_fp: str | PathLike,
     *,
     parse_line_id: bool = False,
 ) -> pd.DataFrame:
@@ -432,7 +432,7 @@ def read_nwp_transit_result_summary(
     }
 
     with zipfile.ZipFile(nwp_fp) as zf:
-        data_types = {"line": str, **{col: float for col in col_names.keys()}}
+        data_types = {"line": str, **{col: float for col in col_names}}
         df = pd.read_csv(zf.open("segment_results.csv"), usecols=data_types.keys(), dtype=data_types)
         if parse_line_id:
             operator, route = parse_tmg_ncs_line_id(df["line"])
@@ -449,8 +449,8 @@ def read_nwp_transit_result_summary(
 
 
 def read_nwp_transit_station_results(
-    nwp_fp: Union[str, PathLike],
-    station_line_nodes: List[int],
+    nwp_fp: str | PathLike,
+    station_line_nodes: list[int],
 ) -> pd.DataFrame:
     """A function to read and summarize the transit boardings (on) and alightings (offs) at stations from a Network
     Package file (exported from Emme using the TMG Toolbox).
@@ -485,7 +485,7 @@ def read_nwp_transit_station_results(
 
 
 def read_nwp_transit_segment_results(
-    nwp_fp: Union[str, PathLike],
+    nwp_fp: str | PathLike,
     *,
     text_encoding: str = "utf-8",
 ) -> pd.DataFrame:
@@ -530,7 +530,7 @@ def read_nwp_transit_segment_results(
 
 
 def read_nwp_transit_vehicles(
-    nwp_fp: Union[str, PathLike],
+    nwp_fp: str | PathLike,
     *,
     text_encoding: str = "utf-8",
 ) -> pd.DataFrame:

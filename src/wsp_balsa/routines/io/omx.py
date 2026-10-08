@@ -8,8 +8,8 @@ __all__ = [
     "to_omx",
 ]
 
+from collections.abc import Iterable
 from os import PathLike
-from typing import Dict, Iterable, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -23,7 +23,7 @@ try:
 except ImportError:
     omx = None
 
-MATRIX_TYPES = Union[pd.DataFrame, pd.Series, NDArray]
+MATRIX_TYPES = pd.DataFrame | pd.Series | NDArray
 
 
 if omx is None:
@@ -45,7 +45,7 @@ if omx is None:
 
 else:
 
-    def list_omx_attributes(src_fp: Union[str, PathLike]) -> List[str]:
+    def list_omx_attributes(src_fp: str | PathLike) -> list[str]:
         """Lists the attributes contained in an OMX file.
 
         Args:
@@ -60,7 +60,7 @@ else:
         finally:
             omx_file.close()
 
-    def list_omx_mappings(src_fp: Union[str, PathLike]) -> List[str]:
+    def list_omx_mappings(src_fp: str | PathLike) -> list[str]:
         """Lists the mappings contained in an OMX file.
 
         Args:
@@ -75,7 +75,7 @@ else:
         finally:
             omx_file.close()
 
-    def list_omx_matrices(src_fp: Union[str, PathLike]) -> List[str]:
+    def list_omx_matrices(src_fp: str | PathLike) -> list[str]:
         """Lists the matrices contained in an OMX file.
 
         Args:
@@ -91,14 +91,14 @@ else:
             omx_file.close()
 
     def read_omx(
-        src_fp: Union[str, PathLike],
+        src_fp: str | PathLike,
         *,
-        tables: Iterable[str] = None,
-        mapping: str = None,
+        tables: Iterable[str] | None = None,
+        mapping: str | None = None,
         tall: bool = False,
         raw: bool = False,
         squeeze: bool = True,
-    ) -> Union[MATRIX_TYPES, Dict[str, MATRIX_TYPES]]:
+    ) -> MATRIX_TYPES | dict[str, MATRIX_TYPES]:
         """Reads Open Matrix (OMX) files. An OMX file can contain multiple matrices, so this function
         typically returns a Dict.
 
@@ -119,7 +119,7 @@ else:
         """
         omx_file = omx.open_file(str(src_fp), mode="r")
         try:
-            table_names: List[str] = sort_nicely(omx_file.list_matrices()) if tables is None else list(tables)
+            table_names: list[str] = sort_nicely(omx_file.list_matrices()) if tables is None else list(tables)
 
             if not raw:
                 if mapping is None:
@@ -128,7 +128,7 @@ else:
                         raise NotImplementedError("Handling of non-square matrices not implemented yet")
                     labels = pd.Index(range(rows))
                 else:
-                    zone_mapping: Dict[int, int] = omx_file.mapping(mapping)
+                    zone_mapping: dict[int, int] = omx_file.mapping(mapping)
                     labels = pd.Index(zone_mapping.keys())
                 if tall:
                     labels = pd.MultiIndex.from_product([labels, labels], names=["o", "d"])
@@ -155,13 +155,13 @@ else:
             omx_file.close()
 
     def to_omx(
-        dst_fp: Union[str, PathLike],
-        tables: Dict[str, MATRIX_TYPES],
+        dst_fp: str | PathLike,
+        tables: dict[str, MATRIX_TYPES],
         *,
-        zone_index: pd.Index = None,
+        zone_index: pd.Index | None = None,
         title: str = "",
-        descriptions: Dict[str, str] = None,
-        attrs: Dict[str, Dict] = None,
+        descriptions: dict[str, str] | None = None,
+        attrs: dict[str, dict] | None = None,
         mapping_name: str = "zone_numbers",
     ):
         """Creates a new (or overwrites an old) OMX file with a collection of matrices.
@@ -182,9 +182,9 @@ else:
         matrices, zone_index = _prep_matrix_dict(tables, zone_index)
 
         if descriptions is None:
-            descriptions = {name: "" for name in matrices.keys()}
+            descriptions = {name: "" for name in matrices}
         if attrs is None:
-            attrs = {name: None for name in matrices.keys()}
+            attrs = {name: None for name in matrices}
 
         omx_file = omx.open_file(str(dst_fp), mode="w", title=title)
         try:
@@ -197,8 +197,8 @@ else:
             omx_file.close()
 
     def _prep_matrix_dict(
-        matrices: Dict[str, MATRIX_TYPES], desired_zone_index: pd.Index
-    ) -> Tuple[Dict[str, np.ndarray], pd.Index]:
+        matrices: dict[str, MATRIX_TYPES], desired_zone_index: pd.Index
+    ) -> tuple[dict[str, np.ndarray], pd.Index]:
         collection_type = _check_types(matrices)
 
         if collection_type == "RAW":
@@ -216,7 +216,7 @@ else:
 
         return checked, zone_index
 
-    def _check_types(matrices: Dict[str, MATRIX_TYPES]) -> str:
+    def _check_types(matrices: dict[str, MATRIX_TYPES]) -> str:
         gen = iter(matrices.values())
         first = next(gen)
 
@@ -238,7 +238,7 @@ else:
 
         return item_type
 
-    def _check_raw_matrices(matrices: Dict[str, np.ndarray]) -> Tuple[Dict[str, np.ndarray], int]:
+    def _check_raw_matrices(matrices: dict[str, np.ndarray]) -> tuple[dict[str, np.ndarray], int]:
         gen = iter(matrices.items())
         name, matrix = next(gen)
 
@@ -270,7 +270,7 @@ else:
 
         return retval, n
 
-    def _check_matrix_series(matrices: Dict[str, pd.Series]) -> Tuple[Dict[str, np.ndarray], pd.Index]:
+    def _check_matrix_series(matrices: dict[str, pd.Series]) -> tuple[dict[str, np.ndarray], pd.Index]:
         gen = iter(matrices.items())
         name, matrix = next(gen)
 
@@ -288,7 +288,7 @@ else:
 
         return retval, zone_index
 
-    def _check_matrix_frames(matrices: Dict[str, pd.DataFrame]) -> Tuple[Dict[str, np.ndarray], pd.Index]:
+    def _check_matrix_frames(matrices: dict[str, pd.DataFrame]) -> tuple[dict[str, np.ndarray], pd.Index]:
         gen = iter(matrices.items())
         name, matrix = next(gen)
 

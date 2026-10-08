@@ -93,7 +93,7 @@ def render(
             line = process.stderr.readline()  # Quarto writes progress info to stderr, so we read from there
             if not line.isspace() and line:
                 print(line.rstrip())
-        msg, err = process.communicate()
+        _, err = process.communicate()
         if process.returncode:
             raise RuntimeError(err)
     finally:

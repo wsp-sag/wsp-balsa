@@ -9,7 +9,6 @@ __all__ = [
 from contextlib import contextmanager
 from io import FileIO
 from pathlib import Path
-from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -17,7 +16,7 @@ from numpy.typing import NDArray
 
 
 def coerce_matrix(
-    matrix: Union[NDArray, pd.DataFrame, pd.Series],
+    matrix: NDArray | pd.DataFrame | pd.Series,
     *,
     allow_raw: bool = True,
     force_square: bool = True,
@@ -33,9 +32,8 @@ def coerce_matrix(
         NDArray: A 2D ndarray of type float32
     """
     if isinstance(matrix, pd.DataFrame):
-        if force_square:
-            if not matrix.index.equals(matrix.columns):
-                raise ValueError("Rows and columns in `matrix` are not identical")
+        if force_square and not matrix.index.equals(matrix.columns):
+            raise ValueError("Rows and columns in `matrix` are not identical")
         return matrix.values.astype(np.float32)
     elif isinstance(matrix, pd.Series):
         if matrix.index.nlevels != 2:
@@ -63,7 +61,7 @@ def expand_array(
     a: NDArray,
     n: NDArray,
     *,
-    axis: int = None,
+    axis: int | None = None,
 ) -> NDArray:
     """Expands an array across all dimensions by a set amount
 
@@ -93,7 +91,7 @@ def expand_array(
 
 
 @contextmanager
-def open_file(file_handle: Union[str, Path, FileIO], **kwargs):
+def open_file(file_handle: str | Path | FileIO, **kwargs):
     """Context manager for opening files provided as several different types. Supports a file handler as a str, unicode,
     ``pathlib.Path``, or an already-opened handler.
 

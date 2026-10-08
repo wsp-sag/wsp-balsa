@@ -8,9 +8,9 @@ __all__ = [
     "to_mdf",
 ]
 
+from collections.abc import Iterable
 from io import FileIO
 from os import PathLike
-from typing import Iterable, List, Union
 
 import numpy as np
 import pandas as pd
@@ -22,11 +22,11 @@ from .common import coerce_matrix, open_file
 
 
 def read_mdf(
-    file: Union[str, FileIO, PathLike],
+    file: str | FileIO | PathLike,
     *,
     raw: bool = False,
     tall: bool = False,
-) -> Union[NDArray, pd.DataFrame, pd.Series]:
+) -> NDArray | pd.DataFrame | pd.Series:
     """Reads Emme's official matrix "binary serialization" format, created using ``inro.emme.matrix.MatrixData.save()``.
     There is no official extension for this type of file; '.mdf' is recommended. '.emxd' is also sometimes encountered.
 
@@ -44,9 +44,9 @@ def read_mdf(
         magic, version, dtype_index, ndim = np.fromfile(file_handler, np.uint32, count=4)
 
         if magic != 0xC4D4F1B2 or version != 1 or not (0 < dtype_index <= 4) or not (0 < ndim <= 2):
-            raise IOError(
-                "Unexpected file header: magic number: %X, version: %d, data type: %d, dimensions: %d."
-                % (magic, version, dtype_index, ndim)
+            raise OSError(
+                f"Unexpected file header: magic number: {magic:X}, version: {version}, data type: {dtype_index}, "
+                f"dimensions: {ndim}."
             )
 
         shape = np.fromfile(file_handler, np.uint32, count=ndim)
@@ -79,8 +79,8 @@ def read_mdf(
 
 
 def to_mdf(
-    matrix: Union[pd.DataFrame, pd.Series],
-    file: Union[str, FileIO, PathLike],
+    matrix: pd.DataFrame | pd.Series,
+    file: str | FileIO | PathLike,
 ) -> None:
     """Writes a matrix to Emme's official "binary serialization" format, which can be loaded in Emme using
     ``inro.emme.matrix.MatrixData.load()``. There is no official extension for this type of file; '.mdf' is recommended.
@@ -112,10 +112,10 @@ def to_mdf(
 
 
 def peek_mdf(
-    file: Union[str, FileIO, PathLike],
+    file: str | FileIO | PathLike,
     *,
     as_index: bool = True,
-) -> Union[List[List[int]], List[pd.Index]]:
+) -> list[list[int]] | list[pd.Index]:
     """Partially opens an MDF file to get the zone system of its rows and its columns.
 
     Args:
@@ -130,9 +130,9 @@ def peek_mdf(
         magic, version, dtype_index, ndim = np.fromfile(file_handler, np.uint32, count=4)
 
         if magic != 0xC4D4F1B2 or version != 1 or not (0 < dtype_index <= 4) or not (0 < ndim <= 2):
-            raise IOError(
-                "Unexpected file header: magic number: %X, version: %d, data type: %d, dimensions: %d."
-                % (magic, version, dtype_index, ndim)
+            raise OSError(
+                f"Unexpected file header: magic number: {magic:X}, version: {version}, data type: {dtype_index}, "
+                f"dimensions: {ndim}."
             )
 
         shape = np.fromfile(file_handler, np.uint32, count=ndim)
@@ -149,11 +149,11 @@ def peek_mdf(
 
 
 def read_emx(
-    file: Union[str, FileIO, PathLike],
+    file: str | FileIO | PathLike,
     *,
-    zones: Union[int, Iterable[int], pd.Index] = None,
+    zones: int | Iterable[int] | pd.Index | None = None,
     tall: bool = False,
-) -> Union[NDArray, pd.DataFrame, pd.Series]:
+) -> NDArray | pd.DataFrame | pd.Series:
     """Reads an "internal" Emme matrix (found in `<Emme Project>/Database/emmemat`); with an '.emx' extension. This data
     format does not contain information about zones. Its size is determined by the dimensions of the Emmebank
     (``Emmebank.dimensions['centroids']``), regardless of the number of zones actually used in all scenarios.
@@ -222,8 +222,8 @@ def read_emx(
 
 
 def to_emx(
-    matrix: Union[pd.DataFrame, pd.Series, NDArray],
-    file: Union[str, FileIO, PathLike],
+    matrix: pd.DataFrame | pd.Series | NDArray,
+    file: str | FileIO | PathLike,
     emmebank_zones: int,
 ) -> None:
     """Writes an "internal" Emme matrix (found in `<Emme Project>/Database/emmemat`); with an '.emx' extension. The
