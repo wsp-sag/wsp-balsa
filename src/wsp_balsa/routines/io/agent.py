@@ -189,12 +189,14 @@ def read_table_calculator_result_attributes(model_step_dict: dict[str, Any]) -> 
     return df
 
 
-def read_utility_expression_table(choice_component_dict: dict) -> pd.DataFrame:
+def read_utility_expression_table(choice_component_dict: dict, *, add_component_index: bool = False) -> pd.DataFrame:
     """Reads the utility expression table from an AGENT model step choice component
 
     Args:
         choice_component_dict (dict): The choice component of a model step in an AGENT model package spec, as a
             dictionary
+        add_component_index (bool, optional): Defaults to ``False``. Whether to add a component index column to the
+            resulting DataFrame.
 
     Returns:
         pd.DataFrame
@@ -203,9 +205,11 @@ def read_utility_expression_table(choice_component_dict: dict) -> pd.DataFrame:
     component_data = [el.split(";") for el in choice_component_dict["utility_expression_table"]["data"]]
     df = pd.DataFrame.from_records(component_data, columns=attribute_info.index.tolist())
     if not df.empty:
+        df.insert(0, "component_index", df.index)
+
         # Handle wide format
         if choice_component_dict["utility_specification_type"] == "wide":
-            df.set_index(["description", "agent_filter", "agent_expression"], inplace=True)
+            df.set_index(["component_index", "description", "agent_filter", "agent_expression"], inplace=True)
             df.columns.name = "alternative_filter"
             df = df.stack().to_frame("coefficient").reset_index()
             df["alternative_filter"] = df["alternative_filter"].map(attribute_info["description"])
@@ -218,6 +222,7 @@ def read_utility_expression_table(choice_component_dict: dict) -> pd.DataFrame:
             df["agent_expression"] = ""
         df = df[
             [
+                "component_index",
                 "description",
                 "alternative_filter",
                 "alternative_expression",
@@ -226,6 +231,8 @@ def read_utility_expression_table(choice_component_dict: dict) -> pd.DataFrame:
                 "coefficient",
             ]
         ].copy()
+        if not add_component_index:
+            df.drop("component_index", axis=1, inplace=True)
 
     return df
 
